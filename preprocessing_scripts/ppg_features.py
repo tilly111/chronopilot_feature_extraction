@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import heartpy as hp
@@ -38,8 +39,21 @@ def calculate_ppg_features(ppg_data: pd.DataFrame, target_f=100, verbose=False):
     f = signal_resampled.shape[0] / (ppg_data["LocalTimestamp"].iloc[-1] - ppg_data["LocalTimestamp"].iloc[0])
     if verbose:
         print(f"actual target frequency: {f}")
+        print(f"resampled shape {signal_resampled.shape}")
+        print(f"original shape {ppg_data.shape}")
+        print(f"original {ppg_data.head()}")
+        # plt.figure()
+        # # plt.plot(ppg_data["PG"], label="original")
+        # plt.plot(filtered, label="filtered")
+        # plt.plot(signal_resampled, label="resampled")
+        # plt.legend()
+        # plt.show()
 
     wd, m = hp.process(signal_resampled, sample_rate=f, high_precision=True, clean_rr=True, bpmmin=0, bpmmax=250)
+
+    if verbose:
+        hp.plotter(wd, m, show=True)
+        plt.show()
 
     # wd = working data, storing temporary values, m = measures aka feature
     return wd, m
@@ -79,9 +93,25 @@ def calculate_ppg_features_nk(ppg_data: pd.DataFrame, target_f=100, verbose=Fals
         print(f"The new frequency is {f}")
         print(f"Length of the resampled signal {signal_resampled.shape}")
 
-    p_1_process, info = nk.ppg_process(signal_resampled, sampling_rate=f)
+    p_1_process, info = nk.ppg_process(signal_resampled, sampling_rate=f)  # , report=f"ppg_report_{int(target_f)}.html" -> somewhat broken
 
-    p_1_features = nk.ppg_analyze(p_1_process, sampling_rate=f)
+    p_1_features = nk.ppg_analyze(p_1_process, sampling_rate=f, method="interval-related")
+
+    if verbose:
+        nk.ppg_plot(p_1_process, info)
+        plt.show()
+
+    if og_f < 300:
+        # we cannot calculate certain features due to the fact that the signal is too short or the sampling frequency is to small
+        p_1_features.drop(columns=["HRV_SDANN2", "HRV_SDNNI2", "HRV_SDANN5", "HRV_SDNNI5", "HRV_ULF"], inplace=True)
+
+        try:
+            p_1_features.drop(columns=['HRV_DFA_alpha2', 'HRV_MFDFA_alpha2_Width', 'HRV_MFDFA_alpha2_Peak',
+                             'HRV_MFDFA_alpha2_Mean', 'HRV_MFDFA_alpha2_Max',
+                             'HRV_MFDFA_alpha2_Delta', 'HRV_MFDFA_alpha2_Asymmetry',
+                             'HRV_MFDFA_alpha2_Fluctuation', 'HRV_MFDFA_alpha2_Increment',], inplace=True)
+        except:
+            print("subject does not can calculate HRV_DFA_alpha2 values")
 
     return p_1_features
 

@@ -1,3 +1,6 @@
+import platform
+import matplotlib
+import matplotlib.pyplot as plt
 import os
 import constants
 import pandas as pd
@@ -7,12 +10,21 @@ from preprocessing_scripts.eda_features import calculate_eda_features, transform
 from preprocessing_scripts.tmp_features import transform_thermo_pile, calculate_thermo_pile_features
 
 
+# for interactive plots
+if platform.system() == "Darwin":
+    matplotlib.use('QtAgg')
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)
+    plt.rcParams.update({'font.size': 22})
+elif platform.system() == "Linux":
+    matplotlib.use('TkAgg')
+
 ########################################################################################################################
 # Names
 ########################################################################################################################
 block_name = "exp_S"  # "baseline", "practice", "exp_T", "exp_MA", "exp_TU", "exp_PU", "exp_S"
-study = "2"  # "1" or "2"
-neuro_kit = True
+study = "1"  # "1" or "2"
+neuro_kit = False
 
 
 if study == "1":
@@ -24,7 +36,7 @@ else:
 # feature extraction -- PPG
 ########################################################################################################################
 if neuro_kit:
-    ppg_features = pd.DataFrame(columns=["subject"] + constants.ALL_PPG_FEATURES_NEUROKIT)
+    ppg_features = pd.DataFrame(columns=["subject"] + constants.ALL_PPG_FEATURES_NEUROKIT_AVAILABLE)
 else:
     ppg_features = pd.DataFrame(columns=["subject"] + constants.ALL_PPG_FEATURES_HEARTPY)
 
@@ -38,9 +50,10 @@ for i, subject in enumerate(subjects):
     bg_block = (df.loc[(df["block"] == block_name)]).reset_index()
     freq = bg_block.shape[0] / (bg_block["time"].iloc[-1] - bg_block["time"].iloc[0])
     print(f"Frequency: {freq}")
+    print(f"Signal length (s): {bg_block['time'].iloc[-1] - bg_block['time'].iloc[0]}")
     bg_block = transform_ppg(bg_block)
     if neuro_kit:
-        m = calculate_ppg_features_nk(bg_block, verbose=False)
+        m = calculate_ppg_features_nk(bg_block, target_f=freq, verbose=False)  # TODO freq required to calculate HRV_DFA_alpha2 values -> 1000
 
         ppg_features.loc[i] = [subject] + [m[k].loc[0] for k in m.keys()]
     else:
@@ -68,7 +81,7 @@ for i, subject in enumerate(subjects):
     freq = bg_block.shape[0] / (bg_block["time"].iloc[-1] - bg_block["time"].iloc[0])
     print(f"Frequency: {freq}")
     bg_block = transform_eda(bg_block)
-    m = calculate_eda_features(bg_block, verbose=False)
+    m = calculate_eda_features(bg_block, verbose=False, target_f=freq)
 
     eda_features.loc[i] = [subject] + [m[k].loc[0] for k in m.keys()]
 

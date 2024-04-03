@@ -37,9 +37,9 @@ def calculate_eda_features(eda_data: pd.DataFrame, target_f=10000, verbose=False
         print(f"The new frequency is {f}")
         print(f"Length of the resampled signal {signal_resampled.shape}")
 
-    p_1_process, info = nk.eda_process(signal_resampled, sampling_rate=f)
+    p_1_process, info = nk.eda_process(signal_resampled, sampling_rate=f, method="neurokit")  # , report=f"myreport_{target_f}.html"
 
-    p_1_features = nk.eda_analyze(p_1_process, sampling_rate=f)
+    p_1_features = nk.eda_analyze(p_1_process, sampling_rate=f, method="interval-related")
 
     return p_1_features
 

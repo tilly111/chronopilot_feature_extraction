@@ -10,9 +10,11 @@ venv/
 __pycache__/
 tmp_stuff_to_safe/
 
+sandbox.py
 
 .DS_Store
 requirements.txt
 Dockerfile
 copy_to_cluster.sh
 plot*
+*.html
