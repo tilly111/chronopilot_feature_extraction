@@ -93,8 +93,9 @@ def calculate_ppg_features_nk(ppg_data: pd.DataFrame, target_f=100, verbose=Fals
         print(f"The new frequency is {f}")
         print(f"Length of the resampled signal {signal_resampled.shape}")
 
-    p_1_process, info = nk.ppg_process(signal_resampled, sampling_rate=f)  # , report=f"ppg_report_{int(target_f)}.html" -> somewhat broken
-
+    p_1_process, info = nk.ppg_process(signal_resampled, sampling_rate=f, report=f"ppg_report_{int(target_f)}.html")  # , report=f"ppg_report_{int(target_f)}.html" -> somewhat broken
+    nk.ppg_plot(p_1_process, info)
+    plt.show()
     p_1_features = nk.ppg_analyze(p_1_process, sampling_rate=f, method="interval-related")
 
     if verbose:
