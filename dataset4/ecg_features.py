@@ -2,42 +2,63 @@ import os
 import pandas as pd
 import neurokit2 as nk
 import wfdb
+import warnings
 
-# Folder path
-folder_path = 'dataset4_Vollmer2022/generated_data/'
+warnings.filterwarnings("ignore", category=pd.errors.DtypeWarning)
 
-# Sampling frequency
-sampling_frequency = 256  # Hz
-task_duration_minutes = 5  # Minutes
-task_duration_samples = task_duration_minutes * 60 * sampling_frequency  # Samples per task
+# Constants
+FOLDER_PATH = 'dataset4_Vollmer2022/generated_data/'
+SAMPLING_RATE = 256  
+TASK_DURATION_MINUTES = 5 
+TASK_DURATION_SAMPLES = TASK_DURATION_MINUTES * 60 * SAMPLING_RATE 
+OUTPUT_FOLDER = "agg_data/dataset4"
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# Function to process tasks with start and end points
 def process_tasks(aux_annotations, signal_length):
-    tasks = []
-    ignore_labels = ["Wrong Marker"] 
-    processed_labels = set() 
+    task_map = {}  # Map for task starts: {Task-Name: [Start, End, Status]}
+    ignore_labels = ["Wrong Marker"]  # Labels to ignore
 
     for i, (start, label) in enumerate(zip(aux_annotations.sample, aux_annotations.aux_note)):
         label = label.strip()
+
+        # Ignore irrelevant markers
         if any(ignore in label for ignore in ignore_labels):
             continue
 
+        # Extract task name
         task_name = label.split("/")[-1]
 
-        # Skip if task already processed
-        if task_name in processed_labels:
-            continue
+        # Prioritize Manual/ as start, otherwise FAROS_Marker/
+        if "Manual/" in label:
+            task_map[task_name] = {'start': start, 'end': None, 'status': 'Manual'}
+        elif "FAROS_Marker" in label:
+            # If task does not exist, add it
+            if task_name not in task_map:
+                task_map[task_name] = {'start': start, 'end': None, 'status': 'FAROS'}
+            else:
+                # If it already exists, set the endpoint
+                if task_map[task_name]['end'] is None:  # Ensure end is not already set
+                    next_index = i + 1
+                    task_map[task_name]['end'] = (
+                        aux_annotations.sample[next_index]
+                        if next_index < len(aux_annotations.sample)
+                        else start + TASK_DURATION_SAMPLES  # Default end if no subsequent marker
+                    )
 
-        end = min(start + task_duration_samples, signal_length)  # Prevent signal overflow
-
-        # Add task and mark as processed
-        tasks.append({'label': task_name, 'start': start, 'end': end})
-        processed_labels.add(task_name)
+    # Convert task_map to tasks list
+    tasks = []
+    for task_name, times in task_map.items():
+        tasks.append({
+            'label': task_name,
+            'start': times['start'],
+            'end': times['end'] or (times['start'] + TASK_DURATION_SAMPLES),  
+            'status': times['status']
+        })
 
     return tasks
 
 # Function to extract features with a defined baseline
-def extract_task_and_baseline_features(tasks, ecg_signal, sampling_rate, participant):
+def extract_task_and_baseline_features(tasks, ecg_signal, participant):
     results = []
     baseline_features = None  # Store baseline features
 
@@ -50,8 +71,8 @@ def extract_task_and_baseline_features(tasks, ecg_signal, sampling_rate, partici
 
         # Check if the task is "Rest" to set as baseline
         if task_name.lower() == "rest":
-            process_baseline, _ = nk.ecg_process(task_segment, sampling_rate=sampling_rate)
-            baseline_features = nk.ecg_analyze(process_baseline, sampling_rate=sampling_rate, method="interval-related")
+            process_baseline, _ = nk.ecg_process(task_segment, sampling_rate=SAMPLING_RATE)
+            baseline_features = nk.ecg_analyze(process_baseline, sampling_rate=SAMPLING_RATE, method="interval-related")
 
             # Add Participant and Task information
             baseline_features.insert(0, 'Participant', participant)
@@ -61,8 +82,8 @@ def extract_task_and_baseline_features(tasks, ecg_signal, sampling_rate, partici
             continue
 
         # Process ECG data for the task
-        process_task, _ = nk.ecg_process(task_segment, sampling_rate=sampling_rate)
-        features_task = nk.ecg_analyze(process_task, sampling_rate=sampling_rate, method="interval-related")
+        process_task, _ = nk.ecg_process(task_segment, sampling_rate=SAMPLING_RATE)
+        features_task = nk.ecg_analyze(process_task, sampling_rate=SAMPLING_RATE, method="interval-related")
 
         # Add Participant and Task information
         features_task.insert(0, 'Participant', participant)
@@ -86,10 +107,6 @@ def extract_task_and_baseline_features(tasks, ecg_signal, sampling_rate, partici
         print("No features extracted.")
         return pd.DataFrame()
 
-# Create output folder
-output_folder = "agg_data/dataset4"
-os.makedirs(output_folder, exist_ok=True)
-
 # Main function
 def main():
     all_faros_results = []
@@ -98,7 +115,7 @@ def main():
     all_hexoskin_results = []
 
     for i, file_prefix in enumerate([f"x{str(j).zfill(3)}" for j in range(1, 14)]):
-        file_path = os.path.join(folder_path, file_prefix)
+        file_path = os.path.join(FOLDER_PATH, file_prefix)
 
         # Check if necessary files exist
         if not os.path.exists(f"{file_path}.aux") or not os.path.exists(f"{file_path}.dat"):
@@ -109,97 +126,36 @@ def main():
         aux_annotations = wfdb.rdann(file_path, 'aux')
         record = wfdb.rdrecord(file_path)
 
-        # Process FAROS/ECG_filtered channel
-        try:
-            ecg_signal_faros = record.p_signal[:, record.sig_name.index("FAROS/ECG_filtered")]
-            signal_length = len(ecg_signal_faros)
-            tasks = process_tasks(aux_annotations, signal_length)
+        # Process each channel
+        channels = {
+            "FAROS/ECG_filtered": all_faros_results,
+            "SOT/EKG_filtered": all_sot_results,
+            "NEXUS/Sensor-B:EEG_filtered": all_nexus_results,
+            "HEXOSKIN/ECG_I_filtered": all_hexoskin_results
+        }
 
-            # Extract features for FAROS
-            df_faros_results = extract_task_and_baseline_features(tasks, ecg_signal_faros, sampling_frequency, participant=str(i + 1))
+        for channel, results_list in channels.items():
+            try:
+                ecg_signal = record.p_signal[:, record.sig_name.index(channel)]
+                signal_length = len(ecg_signal)
+                tasks = process_tasks(aux_annotations, signal_length)
 
-            if not df_faros_results.empty:
-                all_faros_results.append(df_faros_results)
-        except ValueError:
-            print(f"No FAROS/ECG_filtered channel found in {file_prefix}.")
+                # Extract features
+                df_results = extract_task_and_baseline_features(tasks, ecg_signal, participant=str(i + 1))
+                if not df_results.empty:
+                    results_list.append(df_results)
+            except ValueError:
+                print(f"No {channel} channel found in {file_prefix}.")
 
-        # Process SOT/EKG_filtered channel
-        try:
-            ecg_signal_sot = record.p_signal[:, record.sig_name.index("SOT/EKG_filtered")]
-            signal_length = len(ecg_signal_sot)
-            tasks = process_tasks(aux_annotations, signal_length)
-
-            # Extract features for SOT
-            df_sot_results = extract_task_and_baseline_features(tasks, ecg_signal_sot, sampling_frequency, participant=str(i + 1))
-
-            if not df_sot_results.empty:
-                all_sot_results.append(df_sot_results)
-        except ValueError:
-            print(f"No SOT/EKG_filtered channel found in {file_prefix}.")
-
-        # Process NEXUS/Sensor-B:EEG_filtered channel
-        try:
-            ecg_signal_nexus = record.p_signal[:, record.sig_name.index("NEXUS/Sensor-B:EEG_filtered")]
-            signal_length = len(ecg_signal_nexus)
-            tasks = process_tasks(aux_annotations, signal_length)
-
-            # Extract features for NEXUS
-            df_nexus_results = extract_task_and_baseline_features(tasks, ecg_signal_nexus, sampling_frequency, participant=str(i + 1))
-
-            if not df_nexus_results.empty:
-                all_nexus_results.append(df_nexus_results)
-        except ValueError:
-            print(f"No NEXUS/Sensor-B:EEG_filtered channel found in {file_prefix}.")
-
-        # Process HEXOSKIN/ECG_I_filtered channel
-        try:
-            ecg_signal_hexoskin = record.p_signal[:, record.sig_name.index("HEXOSKIN/ECG_I_filtered")]
-            signal_length = len(ecg_signal_hexoskin)
-            tasks = process_tasks(aux_annotations, signal_length)
-
-            # Extract features for HEXOSKIN
-            df_hexoskin_results = extract_task_and_baseline_features(tasks, ecg_signal_hexoskin, sampling_frequency, participant=str(i + 1))
-
-            if not df_hexoskin_results.empty:
-                all_hexoskin_results.append(df_hexoskin_results)
-        except ValueError:
-            print(f"No HEXOSKIN/ECG_I_filtered channel found in {file_prefix}.")
-
-    # Combine results for FAROS
-    if all_faros_results:
-        combined_faros_results = pd.concat(all_faros_results, ignore_index=True)
-        output_faros_file = os.path.join(output_folder, "ecg_features_FAROS.csv")
-        combined_faros_results.to_csv(output_faros_file, index=False)
-        print(f"\nAll FAROS features saved to {output_faros_file}")
-    else:
-        print("No FAROS features extracted.")
-
-    # Combine results for SOT
-    if all_sot_results:
-        combined_sot_results = pd.concat(all_sot_results, ignore_index=True)
-        output_sot_file = os.path.join(output_folder, "ecg_features_SOT.csv")
-        combined_sot_results.to_csv(output_sot_file, index=False)
-        print(f"\nAll SOT features saved to {output_sot_file}")
-    else:
-        print("No SOT features extracted.")
-
-    # Combine results for NEXUS
-    if all_nexus_results:
-        combined_nexus_results = pd.concat(all_nexus_results, ignore_index=True)
-        output_nexus_file = os.path.join(output_folder, "ecg_features_NEXUS.csv")
-        combined_nexus_results.to_csv(output_nexus_file, index=False)
-        print(f"\nAll NEXUS features saved to {output_nexus_file}")
-    else:
-        print("No NEXUS features extracted.")
-
-    # Combine results for HEXOSKIN
-    if all_hexoskin_results:
-        combined_hexoskin_results = pd.concat(all_hexoskin_results, ignore_index=True)
-        output_hexoskin_file = os.path.join(output_folder, "ecg_features_HEXOSKIN.csv")
-        combined_hexoskin_results.to_csv(output_hexoskin_file, index=False)
-        print(f"\nAll HEXOSKIN features saved to {output_hexoskin_file}")
-    else:
-        print("No HEXOSKIN features extracted.")
+    for channel_name, results_list in zip(["FAROS", "SOT", "NEXUS", "HEXOSKIN"],
+                                          [all_faros_results, all_sot_results, all_nexus_results, all_hexoskin_results]):
+        if results_list:
+            combined_results = pd.concat(results_list, ignore_index=True)
+            output_file = os.path.join(OUTPUT_FOLDER, f"ecg_features_{channel_name}.csv")
+            combined_results.to_csv(output_file, index=False)
+            print(f"\nAll {channel_name} features saved to {output_file}")
+        else:
+            print(f"No {channel_name} features extracted.")
 
 if __name__ == "__main__":
     main()
