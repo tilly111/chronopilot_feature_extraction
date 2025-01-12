@@ -6,8 +6,6 @@ import warnings
 
 warnings.filterwarnings("ignore", category=pd.errors.DtypeWarning)
 
-
-
 block_details_dir = "dataset5_Markova2021/CLAS/Block_details"
 data_dir_base = "dataset5_Markova2021/CLAS/Participants"
 output_dir = "agg_data/dataset5"
@@ -39,44 +37,59 @@ def process_participant_files(participant_id):
             return []
 
         block_df = pd.read_csv(block_details_path)
-        eda_file_column = next((col for col in block_df.columns if 'EDA&PPG' in col), None)
+        ppg_file_column = next((col for col in block_df.columns if 'PPG' in col), None)
 
-        if not eda_file_column:
-            print(f"No column with EDA&PPG file names found in {block_details_path}")
+        if not ppg_file_column:
+            print(f"No column with PPG file names found in {block_details_path}")
             return []
 
         data_dir = os.path.join(data_dir_base, participant_folder, "by_block")
-        ppg_results = []
+        baseline_row = block_df[block_df['Block Type'] == 'Baseline'].iloc[0]
 
+        baseline_ppg_pattern = os.path.join(data_dir, baseline_row[ppg_file_column].replace('.csv', '*'))
+        baseline_ppg_file = glob.glob(baseline_ppg_pattern)
+        baseline_ppg_file = baseline_ppg_file[0] if baseline_ppg_file else None
+
+        baseline_features = {}
+
+        if baseline_ppg_file:
+            try:
+                baseline_ppg_data = pd.read_csv(baseline_ppg_file)
+                if 'ppg' not in baseline_ppg_data.columns:
+                    raise ValueError(f"'ppg' column not found in {baseline_ppg_file}")
+                baseline_ppg_signal = baseline_ppg_data['ppg']
+                baseline_features = extract_ppg_features(baseline_ppg_signal)
+                baseline_features = {f"Baseline_{key}": value for key, value in baseline_features.items()}
+            except Exception as e:
+                print(f"Error processing baseline PPG for participant {participant_id}: {e}")
+
+        ppg_results = []
         for _, row in block_df.sort_values('Block').iterrows():
             block = row['Block']
             block_type = row['Block Type']
 
-            # Skip 
-            if block_type in ["Baseline", "Neutral", "IQ Test Response","IQ Test","Math Test","Math Test Response","Stroop Test Response","Stroop Test"]:
+            if block_type in ["Baseline", "Neutral", "IQ Test Response", "IQ Test", "Math Test Response", "Math Test", "Stroop Test Response", "Stroop Test"]:
                 continue
 
-            eda_file = row[eda_file_column]
-            eda_pattern = os.path.join(data_dir, eda_file.replace('.csv', '*'))
-            eda_path = glob.glob(eda_pattern)
-            eda_path = eda_path[0] if eda_path else None
+            ppg_file = row[ppg_file_column]
+            ppg_path = os.path.join(data_dir, ppg_file) if isinstance(ppg_file, str) else None
 
-            if not eda_path or not os.path.exists(eda_path):
+            if not ppg_path or not os.path.exists(ppg_path):
                 print(f"PPG file for block {block} not found. Skipping.")
                 continue
 
             try:
-                eda_data = pd.read_csv(eda_path)
-                if 'ppg' not in eda_data.columns or eda_data['ppg'].isnull().all():
-                    print(f"'ppg' column missing or null in {eda_path}. Skipping block {block}.")
+                ppg_data = pd.read_csv(ppg_path)
+                if 'ppg' not in ppg_data.columns or ppg_data['ppg'].isnull().all():
+                    print(f"'ppg' column missing or null in {ppg_path}. Skipping block {block}.")
                     continue
 
-                ppg_signal = eda_data['ppg']
+                ppg_signal = ppg_data['ppg']
 
                 # Extract PPG features
                 ppg_features_task = extract_ppg_features(ppg_signal)
                 if ppg_features_task:
-                    ppg_combined_features = {**ppg_features_task}
+                    ppg_combined_features = {**baseline_features, **ppg_features_task}
                     ppg_combined_features.update({
                         'Participant': participant_id,
                         'Task': block,
@@ -101,12 +114,13 @@ for participant_folder in sorted(all_participants, key=lambda x: int(x.replace("
     ppg_results = process_participant_files(participant_id)
     all_ppg_results.extend(ppg_results)
 
-# Save PPG results into a CSV file
 if all_ppg_results:
     final_ppg_df = pd.DataFrame(all_ppg_results)
     required_columns = ['Participant', 'Task']
     feature_columns = [col for col in final_ppg_df.columns if col not in required_columns]
-    columns_order = required_columns + sorted(feature_columns)
+    baseline_columns = [col for col in feature_columns if col.startswith("Baseline_")]
+    task_columns = [col for col in feature_columns if not col.startswith("Baseline_")]
+    columns_order = required_columns + sorted(task_columns) + sorted(baseline_columns)
     final_ppg_df = final_ppg_df[columns_order]
     final_ppg_df = final_ppg_df.sort_values(by=['Participant', 'Task'])
     final_ppg_df.to_csv(output_ppg_file, index=False)
