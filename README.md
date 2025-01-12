@@ -14,11 +14,61 @@ This project aggregates physiological datasets and extracts features to develop 
 - **Integration**: Aggregates data from multiple datasets into a unified structure.
 
 ---
+Hier ist ein Abschnitt **"📊 Datasets Used"**, der sich nur auf die verwendeten Daten konzentriert und übersichtlich die relevanten Informationen und Links enthält:
+
+---
+
+## 📊 Datasets Used
+
+1. **SenseCobot**  
+   - **Focus**: Stress and cognitive load during collaborative robotics tasks.  
+   - **Signals**: ECG, GSR, body temperature, EDA, EEG.  
+   - **Data source**: [Zenodo Link](https://zenodo.org/records/10124005)  
+   - **Publication**: [DOI: 10.1145/3610977.3636440](https://doi.org/10.1145/3610977.3636440)
+
+
+
+2. **MAUS**  
+   - **Focus**: Mental load using N-back tasks.  
+   - **Signals**: ECG, PPG, GSR.  
+   - **Data source**: [IEEE Dataport](https://ieee-dataport.org/open-access/maus-dataset-mental-workload-assessment-n-back-task-using-wearable-sensor)  
+   - **Publication**: [ResearchGate](https://www.researchgate.net/publication/355925184)
+
+3. **Simultaneous Physiological Measurements with Five Devices**  
+   - **Focus**: Signal comparison under different cognitive and physical loads.  
+   - **Signals**: ECG (collected during rest, walking, and tasks).  
+   - **Data source**: [PhysioNet](https://physionet.org/content/simultaneous-measurements/1.0.2/)  
+   - **Publication**: [DOI: 10.1371/journal.pone.0274994](https://doi.org/10.1371/journal.pone.0274994)
+
+4. **Detection of Acute Stress Based on Physiological Signals**  
+   - **Focus**: Stress levels during cognitive tasks.  
+   - **Signals**: ECG, PPG, EDA.  
+   - **Data source**: [IEEE Dataport](https://ieee-dataport.org/open-access/database-cognitive-load-affect-and-stress-recognition)  
+   - **Publication**: [DOI: 10.11591/eei.v10i5.3130](https://doi.org/10.11591/eei.v10i5.3130)
+
+5. **Daily Ambulatory Psychological and Physiological Recording**  
+   - **Focus**: Emotional states over five days.  
+   - **Signals**: Heart rate, skin response.  
+   - **Data source**: [Synapse](https://www.synapse.org/#!Synapse:syn22418021/wiki/605529)  
+
+6. **POPANE**  
+   - **Focus**: Emotional states and motivational tendencies.  
+   - **Signals**: ECG, EDA, temperature, respiration, ICG.  
+   - **Data source**: [OSF Link](https://osf.io/94bpx/)  
+   - **Publication**: [Scientific Data](https://doi.org/10.1038/s41597-021-01117-0)
+
+7. **Physiological Responses to Vocal Emotions**  
+   - **Focus**: Laughter and crying stimuli.  
+   - **Signals**: ECG, EMG, EDA.  
+   - **Data source**: [OSF Link](https://osf.io/nvb2u/)  
+
+---
+
+Lass mich wissen, ob Änderungen oder Ergänzungen nötig sind! 😊
 
 ## 🛠️ Requirements
 
-### Python Version
-- Python 3.8 or higher
+
 
 ### Install Dependencies
 
@@ -108,4 +158,4 @@ agg_data/
 ---
 
 
-Feel free to provide feedback or open issues for enhancements. 😊
+Feel free to provide feedback or open issues for enhancements. 
