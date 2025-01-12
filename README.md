@@ -14,9 +14,6 @@ This project aggregates physiological datasets and extracts features to develop 
 - **Integration**: Aggregates data from multiple datasets into a unified structure.
 
 ---
-Hier ist ein Abschnitt **"📊 Datasets Used"**, der sich nur auf die verwendeten Daten konzentriert und übersichtlich die relevanten Informationen und Links enthält:
-
----
 
 ## 📊 Datasets Used
 
@@ -64,7 +61,6 @@ Hier ist ein Abschnitt **"📊 Datasets Used"**, der sich nur auf die verwendete
 
 ---
 
-Lass mich wissen, ob Änderungen oder Ergänzungen nötig sind! 😊
 
 ## 🛠️ Requirements
 
