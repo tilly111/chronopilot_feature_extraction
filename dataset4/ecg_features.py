@@ -3,16 +3,19 @@ import pandas as pd
 import neurokit2 as nk
 import wfdb
 import warnings
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
 
 warnings.filterwarnings("ignore", category=pd.errors.DtypeWarning)
 
 # Constants
-FOLDER_PATH = 'dataset4_Vollmer2022/generated_data/'
+base_dir = os.path.join(const.BASE_DIR, 'dataset4_Vollmer2022/generated_data/')
 SAMPLING_RATE = 256  
 TASK_DURATION_MINUTES = 5 
-TASK_DURATION_SAMPLES = TASK_DURATION_MINUTES * 60 * SAMPLING_RATE 
-OUTPUT_FOLDER = "agg_data/dataset4"
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+TASK_DURATION_SAMPLES = TASK_DURATION_MINUTES * 60 * SAMPLING_RATE
+output_folder = os.path.join(const.OUTPUT_DIR, "dataset4")
+os.makedirs(output_folder, exist_ok=True)
 
 def process_tasks(aux_annotations, signal_length):
     task_map = {}  # Map for task starts: {Task-Name: [Start, End, Status]}
@@ -115,7 +118,7 @@ def main():
     all_hexoskin_results = []
 
     for i, file_prefix in enumerate([f"x{str(j).zfill(3)}" for j in range(1, 14)]):
-        file_path = os.path.join(FOLDER_PATH, file_prefix)
+        file_path = os.path.join(base_dir, file_prefix)
 
         # Check if necessary files exist
         if not os.path.exists(f"{file_path}.aux") or not os.path.exists(f"{file_path}.dat"):
@@ -151,7 +154,7 @@ def main():
                                           [all_faros_results, all_sot_results, all_nexus_results, all_hexoskin_results]):
         if results_list:
             combined_results = pd.concat(results_list, ignore_index=True)
-            output_file = os.path.join(OUTPUT_FOLDER, f"ecg_features_{channel_name}.csv")
+            output_file = os.path.join(output_folder, f"ecg_features_{channel_name}.csv")
             combined_results.to_csv(output_file, index=False)
             print(f"\nAll {channel_name} features saved to {output_file}")
         else:

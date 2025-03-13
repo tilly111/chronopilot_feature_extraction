@@ -2,12 +2,16 @@ import pandas as pd
 import neurokit2 as nk
 import os
 import warnings
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
+from utils import extract_scalar_features
 
 warnings.filterwarnings("ignore", category=pd.errors.DtypeWarning)
 
 # Directories
-base_dir = "dataset1_SenseCobot/GSR_Shimmer3_Signals"
-output_folder = "agg_data/dataset1"
+base_dir = os.path.join(const.BASE_DIR, "dataset1_SenseCobot/GSR_Shimmer3_Signals")
+output_folder = os.path.join(const.OUTPUT_DIR, "dataset1")
 os.makedirs(output_folder, exist_ok=True)
 
 # Sampling rate and participants/tasks
@@ -15,9 +19,6 @@ SAMPLING_RATE = 128
 participants = range(1, 26)
 tasks = range(1, 6)
 
-# Helper to extract scalar features
-def extract_scalar_features(features):
-    return {key: (val.iloc[0] if isinstance(val, pd.Series) else val) for key, val in features.items()}
 
 # Process data
 results = []

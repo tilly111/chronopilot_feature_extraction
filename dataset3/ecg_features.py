@@ -1,10 +1,14 @@
 import pandas as pd
 import neurokit2 as nk
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
+from utils import extract_scalar_features
 
 # Base directories
-base_dir = "dataset3_MAUS/Data/Raw_data"
-output_folder = "agg_data/dataset3"
+base_dir = os.path.join(const.BASE_DIR, "dataset3_MAUS/Data/Raw_data")
+output_folder = os.path.join(const.OUTPUT_DIR, "dataset3")
 os.makedirs(output_folder, exist_ok=True)
 
 # Constants
@@ -12,10 +16,6 @@ SAMPLING_RATE = 256  # Hz
 participants = range(1, 26)  # Participant IDs from 1 to 25
 results = []
 
-# Helper function to extract scalar features
-def extract_scalar_features(features):
-    """Convert nested objects to scalar values."""
-    return {key: (val.iloc[0] if isinstance(val, pd.Series) else val) for key, val in features.items()}
 
 # Process ECG data for each participant
 for participant in participants:

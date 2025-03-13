@@ -1,18 +1,22 @@
 import os
 import pandas as pd
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
+
 
 # Define file paths
-database_file = "dataset5_Markova2021/CLAS/Documentation/DataBaseDescription.xlsx"
-setup1_file = "dataset5_Markova2021/CLAS/Documentation/Setup1.xlsx"
-setup2_file = "dataset5_Markova2021/CLAS/Documentation/Setup2.xlsx"
+database_file = os.path.join(const.BASE_DIR, "dataset5_Markova2021/CLAS/Documentation/DataBaseDescription.xlsx")
+setup1_file = os.path.join(const.BASE_DIR, "dataset5_Markova2021/CLAS/Documentation/Setup1.xlsx")
+setup2_file = os.path.join(const.BASE_DIR, "dataset5_Markova2021/CLAS/Documentation/Setup2.xlsx")
 
 # Define output directory and file paths
-output_dir = "agg_data/dataset5"
-os.makedirs(output_dir, exist_ok=True)  
+output_folder = os.path.join(const.OUTPUT_DIR, "dataset5")
+os.makedirs(output_folder, exist_ok=True)
 
-output_labels_file = os.path.join(output_dir, "labels.csv")
-output_setup1_file = os.path.join(output_dir, "setup1_details.csv")
-output_setup2_file = os.path.join(output_dir, "setup2_details.csv")
+output_labels_file = os.path.join(output_folder, "labels.csv")
+output_setup1_file = os.path.join(output_folder, "setup1_details.csv")
+output_setup2_file = os.path.join(output_folder, "setup2_details.csv")
 
 # Read input data
 stset1_data = pd.read_excel(database_file, sheet_name="Stset1")  

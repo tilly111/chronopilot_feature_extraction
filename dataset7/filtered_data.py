@@ -1,10 +1,14 @@
 import pandas as pd
 import os
 from datetime import datetime
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # NOTE hack to include constants
+import constants as const
+
 
 # Allgemeine Variablen und Pfade
-base_folder = "dataset7_Shui2021"
-output_folder_base = "filtered_data"
+base_folder = os.path.join(const.BASE_DIR, "dataset7_Shui2021")
+output_folder_base = const.FILTERED_DIR
 os.makedirs(output_folder_base, exist_ok=True)
 
 # DRM-Datei laden

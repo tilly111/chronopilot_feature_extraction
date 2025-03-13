@@ -1,10 +1,13 @@
 import pandas as pd
 import numpy as np
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
 
-BASE_DIR = "dataset3_MAUS/Data/Raw_data"
-OUTPUT_FOLDER = "agg_data/dataset3"
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+base_dir = os.path.join(const.BASE_DIR, "dataset3_MAUS/Data/Raw_data")
+output_folder = os.path.join(const.OUTPUT_DIR, "dataset3")
+os.makedirs(output_folder, exist_ok=True)
 
 PARTICIPANTS = range(1, 26)
 
@@ -68,7 +71,7 @@ def main():
     print("Processing labels...")
     labels_df = process_labels()
     if labels_df is not None:
-        labels_file_path = os.path.join(OUTPUT_FOLDER, "labels.csv")
+        labels_file_path = os.path.join(output_folder, "labels.csv")
         labels_df.to_csv(labels_file_path, index=False)
         print(f"Labels saved to {labels_file_path}")
     else:

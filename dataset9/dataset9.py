@@ -1,12 +1,15 @@
 import os
 import pandas as pd
 import numpy as np
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
 
 
-file_path = "dataset9_Pires2023/data/physiol_processed_short.csv"
+file_path = os.path.join(const.BASE_DIR, "dataset9_Pires2023/data/physiol_processed_short.csv")
 data = pd.read_csv(file_path)
 
-output_dir = "agg_data/dataset9"
+output_dir = os.path.join(const.OUTPUT_DIR, "dataset9")
 os.makedirs(output_dir, exist_ok=True)
 
 # Add numeric IDs for Participant and Sound

@@ -2,10 +2,13 @@ import os
 import pandas as pd
 import numpy as np
 from scipy.signal import welch
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
 
 # Directories
-base_dir = "dataset1_SenseCobot/EDA_Empatica_Signals"
-output_folder = "agg_data/dataset1"
+base_dir = os.path.join(const.BASE_DIR, "dataset1_SenseCobot/EDA_Empatica_Signals")
+output_folder = os.path.join(const.OUTPUT_DIR, "dataset1")
 os.makedirs(output_folder, exist_ok=True)
 
 TEMP_SAMPLING_RATE = 4  

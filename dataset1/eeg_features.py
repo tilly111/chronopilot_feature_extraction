@@ -3,12 +3,16 @@ import numpy as np
 import neurokit2 as nk
 import os
 import warnings
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
+from utils import extract_scalar_features
 
 warnings.filterwarnings("ignore", category=pd.errors.DtypeWarning)
 
 # Directories
-base_dir = "dataset1_SenseCobot/EEG_Enobio20_Signals"
-output_folder = "agg_data/dataset1"
+base_dir = os.path.join(const.BASE_DIR, "dataset1_SenseCobot/EEG_Enobio20_Signals")
+output_folder = os.path.join(const.OUTPUT_DIR, "dataset1")
 os.makedirs(output_folder, exist_ok=True)
 
 # Parameters

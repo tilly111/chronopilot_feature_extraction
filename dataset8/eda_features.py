@@ -1,16 +1,17 @@
 import os
 import pandas as pd
 import neurokit2 as nk
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
+from utils import extract_scalar_features
 
 # Base directories
-input_dir = "dataset8_POPANE"
-output_file = "agg_data/dataset8/eda_features.csv"
+input_dir = os.path.join(const.BASE_DIR, "dataset8_POPANE")
+output_file = os.path.join(const.OUTPUT_DIR, "dataset8/eda_features.csv")
 baseline_dir = os.path.join(input_dir, "Baselines")
 SAMPLING_RATE = 1000
 
-def extract_scalar_features(features):
-    """Convert nested objects to scalar values."""
-    return {key: (val.iloc[0] if isinstance(val, pd.Series) else val) for key, val in features.items()}
 
 data_list = []
 

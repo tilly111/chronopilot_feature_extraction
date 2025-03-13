@@ -1,9 +1,12 @@
 import pandas as pd
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
 
 # Define file paths
-input_file = "dataset7_Shui2021/Psychol_Rec/DRM.xlsx"
-output_folder = "agg_data/dataset7"
+input_file = os.path.join(const.BASE_DIR, "dataset7_Shui2021/Psychol_Rec/DRM.xlsx")
+output_folder = os.path.join(const.OUTPUT_DIR, "dataset7")
 output_file = os.path.join(output_folder, "labels.csv")
 
 # Ensure the output folder exists

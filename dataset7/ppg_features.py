@@ -1,6 +1,9 @@
 import os
 import pandas as pd
 import neurokit2 as nk
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
 
 SAMPLING_RATE = 20  # Sampling Rate (Hz)
 
@@ -107,8 +110,8 @@ def process_ppg_files_in_folder(filtered_folder, output_folder):
 # Main execution
 if __name__ == "__main__":
     # Define input and output folders
-    filtered_folder = "filtered_data"
-    output_folder = "agg_data/dataset7"
+    filtered_folder = os.path.join(const.FILTERED_DIR, "filtered_data")
+    output_folder = os.path.join(const.OUTPUT_DIR, "dataset7")
 
     # Process PPG files
     process_ppg_files_in_folder(filtered_folder, output_folder)

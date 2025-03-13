@@ -1,11 +1,15 @@
 import pandas as pd
 import neurokit2 as nk
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
+from utils import extract_scalar_features
 
 # Base directories
-BASE_DIR = "dataset3_MAUS/Data/Raw_data"
-OUTPUT_FOLDER = "agg_data/dataset3"
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+base_dir = os.path.join(const.BASE_DIR, "dataset3_MAUS/Data/Raw_data")
+output_folder = os.path.join(const.OUTPUT_DIR, "dataset3")
+os.makedirs(output_folder, exist_ok=True)
 
 # Sampling rates
 SAMPLING_RATE = {
@@ -15,10 +19,6 @@ SAMPLING_RATE = {
 
 PARTICIPANTS = range(1, 26)
 
-# Helper function to extract scalar features
-def extract_scalar_features(features):
-    """Convert nested objects to scalar values."""
-    return {key: (val.iloc[0] if isinstance(val, pd.Series) else val) for key, val in features.items()}
 
 # Function to process a signal (PPG or Pixart)
 def process_signal(participant, participant_dir, signal_type, resting_file, resting_column, task_file_name):
@@ -79,7 +79,7 @@ def process_signal(participant, participant_dir, signal_type, resting_file, rest
 # Process Pixart data
 pixart_results = []
 for participant in PARTICIPANTS:
-    participant_dir = f"{BASE_DIR}/{participant:03}"
+    participant_dir = f"{base_dir}/{participant:03}"
     pixart_results.extend(process_signal(
         participant=participant,
         participant_dir=participant_dir,
@@ -90,7 +90,7 @@ for participant in PARTICIPANTS:
     ))
 
 # Save Pixart results
-pixart_file_path = os.path.join(OUTPUT_FOLDER, "ppg_features_pixart.csv")
+pixart_file_path = os.path.join(output_folder, "ppg_features_pixart.csv")
 if pixart_results:
     pd.DataFrame(pixart_results).to_csv(pixart_file_path, index=False)
     print(f"Pixart PPG features saved to {pixart_file_path}")
@@ -98,7 +98,7 @@ if pixart_results:
 # Process PPG data
 ppg_results = []
 for participant in PARTICIPANTS:
-    participant_dir = f"{BASE_DIR}/{participant:03}"
+    participant_dir = f"{base_dir}/{participant:03}"
     ppg_results.extend(process_signal(
         participant=participant,
         participant_dir=participant_dir,
@@ -109,7 +109,7 @@ for participant in PARTICIPANTS:
     ))
 
 # Save PPG results
-ppg_file_path = os.path.join(OUTPUT_FOLDER, "ppg_features.csv")
+ppg_file_path = os.path.join(output_folder, "ppg_features.csv")
 if ppg_results:
     pd.DataFrame(ppg_results).to_csv(ppg_file_path, index=False)
     print(f"PPG features saved to {ppg_file_path}")

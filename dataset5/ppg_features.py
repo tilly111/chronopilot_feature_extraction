@@ -3,15 +3,18 @@ import neurokit2 as nk
 import os
 import glob
 import warnings
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
 
 warnings.filterwarnings("ignore", category=pd.errors.DtypeWarning)
 
-block_details_dir = "dataset5_Markova2021/CLAS/Block_details"
-data_dir_base = "dataset5_Markova2021/CLAS/Participants"
-output_dir = "agg_data/dataset5"
-output_ppg_file = os.path.join(output_dir, "ppg_features.csv")
+block_details_dir = os.path.join(const.BASE_DIR, "dataset5_Markova2021/CLAS/Block_details")
+data_dir_base = os.path.join(const.BASE_DIR, "dataset5_Markova2021/CLAS/Participants")
+output_folder = os.path.join(const.OUTPUT_DIR, "dataset5")
+output_ppg_file = os.path.join(output_folder, "ppg_features.csv")
 SAMPLING_RATE = 256  # Predefined sampling rate
-os.makedirs(output_dir, exist_ok=True)
+os.makedirs(output_folder, exist_ok=True)
 
 # Function to extract PPG features
 def extract_ppg_features(ppg_signal):

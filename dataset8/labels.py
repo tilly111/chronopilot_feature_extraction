@@ -1,9 +1,12 @@
 import os
 import pandas as pd
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
 
 # Paths
-input_dir = "dataset8_POPANE"
-output_file = "agg_data/dataset8/labels.csv"
+input_dir = os.path.join(const.BASE_DIR, "dataset8_POPANE")
+output_file = os.path.join(const.OUTPUT_DIR, "dataset8/labels.csv")
 
 data_list = []
 
