@@ -110,7 +110,7 @@ def process_ppg_files_in_folder(filtered_folder, output_folder):
 # Main execution
 if __name__ == "__main__":
     # Define input and output folders
-    filtered_folder = os.path.join(const.FILTERED_DIR, "filtered_data")
+    filtered_folder = const.FILTERED_DIR
     output_folder = os.path.join(const.OUTPUT_DIR, "dataset7")
 
     # Process PPG files

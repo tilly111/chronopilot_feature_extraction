@@ -36,6 +36,7 @@ def process_single_file(file_path):
     Returns:
         dict: A dictionary containing extracted features and metadata.
     """
+    print(f"Verarbeite Datei: {file_path}")  # Debug-Output
     file_name = os.path.basename(file_path)
     print(f"Verarbeite Datei: {file_name}")  # Debug-Output
 
@@ -80,7 +81,6 @@ def process_filtered_files(filtered_folder, output_folder):
     """
     os.makedirs(output_folder, exist_ok=True)
     gsr_features = []
-
     # Walk through the folder and process each file
     for root, _, files in os.walk(filtered_folder):
         for file in files:
@@ -97,7 +97,6 @@ def process_filtered_files(filtered_folder, output_folder):
     # Save the results
     output_file = os.path.join(output_folder, "gsr_features.csv")
     df = pd.DataFrame(gsr_features)
-
     # Sort columns and rows
     columns_order = ["Participant", "Task", "Date"] + [col for col in df.columns if col not in ["Participant", "Task", "Date"]]
     df = df[columns_order]
@@ -110,7 +109,7 @@ def process_filtered_files(filtered_folder, output_folder):
 # Main execution
 if __name__ == "__main__":
     # Define input and output folders
-    filtered_folder = os.path.join(const.FILTERED_DIR, "filtered_data")
+    filtered_folder = const.FILTERED_DIR
     output_folder = os.path.join(const.OUTPUT_DIR, "dataset7")
 
     # Process files

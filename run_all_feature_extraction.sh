@@ -26,20 +26,18 @@ python chronopilot_feature_extraction/dataset5/eda_features.py &
 python chronopilot_feature_extraction/dataset5/labels.py &
 python chronopilot_feature_extraction/dataset5/ppg_features.py &
 
-# dataset7
-python chronopilot_feature_extraction/dataset7/filtered_data.py &
-python chronopilot_feature_extraction/dataset7/gsr_features.py &
-python chronopilot_feature_extraction/dataset7/labels.py &
-python chronopilot_feature_extraction/dataset7/ppg_features.py &
-
 # dataset8
 python chronopilot_feature_extraction/dataset8/ecg_features.py &
 python chronopilot_feature_extraction/dataset8/eda_features.py &
 python chronopilot_feature_extraction/dataset8/labels.py &
 
 # dataset9
-python chronopilot_feature_extraction/dataset9/dataset9.py
+python chronopilot_feature_extraction/dataset9/dataset9.py &
+
+# dataset7
+python chronopilot_feature_extraction/dataset7/filtered_data.py  # NOTE this needs to be completed first before we can continue
+python chronopilot_feature_extraction/dataset7/gsr_features.py &
+python chronopilot_feature_extraction/dataset7/labels.py &
+python chronopilot_feature_extraction/dataset7/ppg_features.py &
 
 wait
-
-deactivate

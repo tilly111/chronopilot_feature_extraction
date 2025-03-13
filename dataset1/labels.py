@@ -46,10 +46,10 @@ for participant_id, row in enumerate(nasa_tlx_data.iterrows(), start=1):
 processed_data = pd.DataFrame(data)
 
 # Save the processed data to the desired folder
-output_folder = 'agg_data/dataset1'
+output_folder = os.path.join(const.OUTPUT_DIR, "dataset1")
 os.makedirs(output_folder, exist_ok=True)  # Create the folder if it doesn't exist
 output_file = os.path.join(output_folder, 'labels.csv')
-
 os.makedirs(output_folder, exist_ok=True)
+processed_data.to_csv(output_file, index=False)  # Save the DataFrame to a CSV file
 
 print(f'The processed data has been saved to: {output_file}')

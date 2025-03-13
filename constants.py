@@ -5,6 +5,6 @@ if tills_mbp:
     BASE_DIR = "/Volumes/Data/chronopilot/external_datasets"  # Path to the base folder for the input files
     FILTERED_DIR = "/Volumes/Data/chronopilot/external_datasets/filtered_data"  # Path to the base folder for the filtered files
 else:
-    OUTPUT_DIR = ...  # TODO
-    BASE_DIR = ...  # TODO
-    FILTERED_DIR = ...  # TODO
+    OUTPUT_DIR = "agg_data"  # TODO check if this is correct
+    BASE_DIR = ""  # TODO check if this is correct
+    FILTERED_DIR = "filtered_data"  # TODO check if this is correct

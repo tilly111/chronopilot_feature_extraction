@@ -15,7 +15,7 @@ def process_labels():
     """
     Process subjective ratings and derive well-being labels.
     """
-    source_folder = "dataset3_MAUS/Subjective_rating"
+    source_folder = os.path.join(const.BASE_DIR, "dataset3_MAUS/Subjective_rating")
     task_mapping = {
         "Trial 1: 0_back": 1,
         "Trial 2: 2_back": 2,

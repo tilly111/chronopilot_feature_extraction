@@ -18,6 +18,10 @@ output_labels_file = os.path.join(output_folder, "labels.csv")
 output_setup1_file = os.path.join(output_folder, "setup1_details.csv")
 output_setup2_file = os.path.join(output_folder, "setup2_details.csv")
 
+# Read setup data
+setup1_data = pd.read_excel(setup1_file)
+setup2_data = pd.read_excel(setup2_file)
+
 # Read input data
 stset1_data = pd.read_excel(database_file, sheet_name="Stset1")  
 stimtag_data = pd.read_excel(database_file, sheet_name="StimTag")  

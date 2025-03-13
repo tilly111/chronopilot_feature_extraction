@@ -16,7 +16,7 @@ psychol_file_path = os.path.join(base_folder, "Psychol_Rec/DRM.xlsx")
 drm_data = pd.read_excel(psychol_file_path)
 
 # Funktion zur Verarbeitung eines Bereichs
-def process_event_range(event_prefix, phys_folder, output_subfolder):
+def process_event_range(event_prefix, phys_folder, output_subfolder, signal_type="PPG"):
     event_rows = drm_data[drm_data['Event ID'].str.match(fr'^{event_prefix}\d{{3}}-')]
     output_folder = os.path.join(output_folder_base, output_subfolder)
     os.makedirs(output_folder, exist_ok=True)
@@ -51,10 +51,10 @@ def process_event_range(event_prefix, phys_folder, output_subfolder):
             print(f"Kein Ordner gefunden für Event ID {target_event_id}: {event_folder}")
             continue
 
-        def get_matching_file(folder, target_start, target_end):
+        def get_matching_file(folder, target_start, target_end, signal_type="PPG"):
             for root, _, files in os.walk(folder):
                 for file in files:
-                    if file.endswith(".csv") and "_PPG" in file:
+                    if file.endswith(".csv") and f"_{signal_type}" in file:
                         parts = file.replace(".csv", "").split("_")
                         if len(parts) < 2:
                             continue
@@ -69,7 +69,7 @@ def process_event_range(event_prefix, phys_folder, output_subfolder):
                             return os.path.join(root, file)
             return None
 
-        matching_file = get_matching_file(event_folder, start_time, end_time)
+        matching_file = get_matching_file(event_folder, start_time, end_time, signal_type=signal_type)
 
         if not matching_file:
             print(f"Keine passenden Dateien für Event ID {target_event_id} im Ordner '{event_folder}' gefunden.")
@@ -104,8 +104,26 @@ def process_event_range(event_prefix, phys_folder, output_subfolder):
             output_file_path = os.path.join(output_folder, f"filtered_{target_event_id}_{os.path.basename(matching_file)}")
             filtered_data.to_csv(output_file_path, index=False)
             print(f"Gefilterte Daten für Event ID {target_event_id} wurden gespeichert in: {output_file_path}")
+        elif 'csv_time_GSR' in data.columns:
+            data['csv_time_GSR'] = pd.to_datetime(data['csv_time_GSR'], format="%d-%b-%Y %H:%M:%S", errors='coerce')
+            filtered_data = data[
+                (data['csv_time_GSR'] >= start_time) &
+                (data['csv_time_GSR'] <= end_time)
+                ]
+            if filtered_data.empty:
+                print(f"Keine Daten im gewünschten Intervall für Event ID {target_event_id}.")
+                continue
+            output_file_path = os.path.join(output_folder, f"filtered_{target_event_id}_{os.path.basename(matching_file)}")
+            filtered_data.to_csv(output_file_path, index=False)
+            print(f"Gefilterte Daten für Event ID {target_event_id} wurden gespeichert in: {output_file_path}")
+
 
 # Bereiche verarbeiten
-process_event_range("3", "Physiol_Rec 3", "Physiol_Rec_3")
-process_event_range("1", "Physiol_Rec 1", "Physiol_Rec_1")
-process_event_range("2", "Physiol_Rec 2", "Physiol_Rec_2")
+process_event_range("3", "Physiol_Rec 3", "Physiol_Rec_3", signal_type="PPG")
+process_event_range("1", "Physiol_Rec 1", "Physiol_Rec_1", signal_type="PPG")
+process_event_range("2", "Physiol_Rec 2", "Physiol_Rec_2", signal_type="PPG")
+
+process_event_range("3", "Physiol_Rec 3", "Physiol_Rec_3", signal_type="GSR")
+process_event_range("1", "Physiol_Rec 1", "Physiol_Rec_1", signal_type="GSR")
+process_event_range("2", "Physiol_Rec 2", "Physiol_Rec_2", signal_type="GSR")
+
