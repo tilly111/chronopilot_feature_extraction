@@ -123,13 +123,13 @@ class Data_Loader:
 
     # Format: person x setting x 0 = data, 1 = label
     def load_helicopter(self, kind="RR", norm_method=None):
-        labels = pd.read_csv("data/helicopter/timings.csv", header=0)
+        labels = pd.read_csv("/Volumes/Data/chronopilot/helicopter/timings.csv", header=0)
         data = [[[None for _ in range(2)] for _ in range(4)] for _ in range(12)]
         # for all subjects
         for p in range(1, 13):
             # for all settings
             for s in range(1, 5):
-                data_path = "data/helicopter/Physiological/" + kind + "/subject" + str(p) + "-" + str(s) + "_" + kind + ".csv"
+                data_path = "/Volumes/Data/chronopilot/helicopter/Physiological/" + kind + "/subject" + str(p) + "-" + str(s) + "_" + kind + ".csv"
                 x = pd.read_csv(data_path, header=0)
                 y = labels.loc[(labels['ParticipantID'] == p) & (labels['Session'] == s)]
                 data[p-1][s-1][0] = x

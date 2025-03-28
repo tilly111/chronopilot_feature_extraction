@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from utils.data_loader import Data_Loader
 import constants
 
-from preprocessing_scripts.ppg_features import transform_ppg, calculate_ppg_features
+from preprocessing_scripts.ppg_features import transform_ppg, calculate_ppg_features, calculate_ppg_features_nk
 from preprocessing_scripts.eda_features import transform_eda, calculate_eda_features
 from preprocessing_scripts.tmp_features import transform_thermo_pile, calculate_thermo_pile_features
 
@@ -31,8 +31,8 @@ interval = "start_posttest"
 ########################################################################################################################
 # Load experiment data
 ########################################################################################################################
-labels = pd.read_csv("data/helicopter/cleaned_data/labels.csv", sep=";")
-time_stamps = pd.read_csv("data/helicopter/Physiological/timestamps.csv")
+labels = pd.read_csv("/Volumes/Data/chronopilot/helicopter/new_label/labels_3_classes.csv", sep=";")
+time_stamps = pd.read_csv("/Volumes/Data/chronopilot/helicopter/Physiological/timestamps.csv")
 
 data_loader = Data_Loader("data/")
 
@@ -48,11 +48,60 @@ landing = time_stamps.loc[time_stamps["Phase"] == "landing"]["LocalTimestamp"].t
 posttest = time_stamps.loc[time_stamps["Phase"] == "posttest"]["LocalTimestamp"].to_numpy()
 
 ########################################################################################################################
-# feature extraction -- PPG
+# feature extraction -- PPG (neurokit)
 ########################################################################################################################
 # check if directory exists for writing
-if not os.path.exists("./preprocessed_data/" + experiment_name + "/ppg/" + interval + "/"):
-    os.makedirs("./preprocessed_data/" + experiment_name + "/ppg/" + interval + "/")
+if not os.path.exists("./preprocessed_data/" + experiment_name + "/ppg_nk/" + interval + "/"):
+    os.makedirs("./preprocessed_data/" + experiment_name + "/ppg_nk/" + interval + "/")
+data = data_loader.load_helicopter("PPG")
+for i in range(12):  # for all participants
+    # for saving
+    neurokit_helicopter = pd.DataFrame(columns=constants.ALL_PPG_FEATURES_NEUROKIT_AVAILABLE)
+    print(f"person {i+1}: pretest {takeoff[i*4:(i+1)*4] - start[i*4:(i+1)*4]}")
+
+    for s in range(4):  # for all settings
+        # cut data into pieces
+        print(f"setting user {i+1} setting {s+1} ---------------------------")
+        d = data[i][s][0]
+        minuend = d.loc[((d["LocalTimestamp"] >= start[i*4 + s]) & (d["LocalTimestamp"] <= posttest[i*4 + s]))]
+        subtrahend = d.loc[((d["LocalTimestamp"] >= start[i*4 + s]) & (d["LocalTimestamp"] <= takeoff[i*4 + s]))]
+
+        # format data
+        minuend = transform_ppg(minuend)
+        subtrahend = transform_ppg(subtrahend)
+
+        # calculate features
+        if i == 10 and s == 1:  # hacking the only data point which is nan for some reason?
+            min_m = calculate_ppg_features_nk(minuend, target_f=200, verbose=False)
+            # sub_m = calculate_ppg_features_nk(subtrahend, target_f=200, verbose=False)
+        else:
+            min_m = calculate_ppg_features_nk(minuend, target_f=100, verbose=False)
+            # sub_m = calculate_ppg_features_nk(subtrahend, target_f=100, verbose=False)
+
+        # background subtraction
+        # for k in min_m.keys():
+        #     min_m[k] = min_m[k] - sub_m[k]
+            # min_m[k] = sub_m[k] - min_m[k]
+        # print(min_m.shape)
+        # print(min_m.head())
+        # print(neurokit_helicopter.shape)
+        # print(neurokit_helicopter.head())
+
+        # neurokit_helicopter.loc[s] = min_m.values
+        # append the two data frames
+        neurokit_helicopter = pd.concat([neurokit_helicopter, min_m], axis=0)
+    # print results
+    # print(f"participant: {i + 1} ---------------------------")
+    # print(heartpy_helicopter)
+    # or save the data
+    neurokit_helicopter.to_csv("/Volumes/Data/chronopilot/helicopter/features/" + experiment_name + "/ppg_nk/" + interval + f"/subjectID_{i+1}.csv")
+exit(111)
+########################################################################################################################
+# feature extraction -- PPG (HeartPy)
+########################################################################################################################
+# check if directory exists for writing
+if not os.path.exists("./preprocessed_data/" + experiment_name + "/ppg_nk/" + interval + "/"):
+    os.makedirs("./preprocessed_data/" + experiment_name + "/ppg_nk/" + interval + "/")
 data = data_loader.load_helicopter("PPG")
 for i in range(12):  # for all participants
     # for saving
@@ -87,7 +136,7 @@ for i in range(12):  # for all participants
     # print(f"participant: {i + 1} ---------------------------")
     # print(heartpy_helicopter)
     # or save the data
-    heartpy_helicopter.to_csv(f"preprocessed_data/" + experiment_name + f"/ppg/" + interval + f"/subjectID_{i+1}.csv")
+    heartpy_helicopter.to_csv(f"preprocessed_data/" + experiment_name + f"/ppg_nk/" + interval + f"/subjectID_{i+1}.csv")
 
 
 ########################################################################################################################

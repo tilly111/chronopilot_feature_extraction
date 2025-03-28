@@ -1,6 +1,6 @@
 # Feature extraction pipeline for the ChronoPilot project
 
-# Helicopter study
+## Helicopter study
 The `helicopter_featues` folder contains all preprocessing scripts used for the helicopter study. 
 
 You can read about it here: [Helicopter study](https://arxiv.org/pdf/2404.15213).
