@@ -5,15 +5,6 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-def extract_scalar_features(features):
-    scalar = {}
-    for key, value in features.items():
-        if isinstance(value, pd.Series):
-            scalar[key] = value.iloc[0]
-        else:
-            scalar[key] = value
-    return scalar
-
 base_dir = "dataset1_SenseCobot/EDA_Empatica_Signals"
 output_folder = "agg_data/dataset1"
 os.makedirs(output_folder, exist_ok=True)
@@ -22,6 +13,9 @@ SAMPLING_RATE = 4
 
 participants = range(1, 22)
 tasks = range(1, 6)
+
+def extract_scalar_features(features):
+    return {key: (val.iloc[0] if isinstance(val, pd.Series) else val) for key, val in features.items()}
 
 # Sliding-Window-Parameter
 window_length = pd.Timedelta(seconds=72)  
