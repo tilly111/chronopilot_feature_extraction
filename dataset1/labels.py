@@ -37,7 +37,7 @@ for participant_id, row in enumerate(nasa_tlx_data.iterrows(), start=1):
             'Participant': participant_id,  # Participant IDs start at 1
             'Task': task,
             'Stress': stress_label,  # Stress label (binary)
-            'Well-Being': well_being_label,  # Well-being label (binary)
+            'Well-being': well_being_label,  # Well-being label (binary)
             'A_Score': a_score,  # Score from A_TASK
             'B_Score': b_score   # Score from B_TASK
         })
