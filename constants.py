@@ -11,4 +11,6 @@ else:
     OUTPUT_DIR = "agg_data"  # TODO check if this is correct
     BASE_DIR = "BA projekt"  # TODO check if this is correct
     FILTERED_DIR = "filtered_data"  # TODO check if this is correct
+    INTERVAL = 72
+    STEP = 20
     
