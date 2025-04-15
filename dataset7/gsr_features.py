@@ -1,22 +1,27 @@
 import os
 import pandas as pd
 import neurokit2 as nk
+import logging
 import sys
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import constants as const
 
-SAMPLING_RATE = 40  # Sampling Rate (Hz)
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler("gsr_processing.log"),
+        logging.StreamHandler()
+    ]
+)
+
+SAMPLING_RATE = 40  # Hz
+WINDOW_LENGTH = const.INTERVAL * SAMPLING_RATE
+STEP_SIZE = const.STEP * SAMPLING_RATE
 
 def extract_file_info(file_name):
-    """
-    Extracts Participant, Task, and Date from the file name.
-    
-    Parameters:
-        file_name (str): Name of the file.
-    
-    Returns:
-        tuple: A tuple containing (participant, task, date).
-    """
     try:
         parts = file_name.split('_')[1].split('-')
         participant = parts[0]
@@ -27,90 +32,83 @@ def extract_file_info(file_name):
         return "Unknown", "Unknown", "Unknown"
 
 def process_single_file(file_path):
-    """
-    Processes a single GSR file and extracts features.
-    
-    Parameters:
-        file_path (str): Path to the GSR file.
-    
-    Returns:
-        dict: A dictionary containing extracted features and metadata.
-    """
-    print(f"Verarbeite Datei: {file_path}")  # Debug-Output
     file_name = os.path.basename(file_path)
-    print(f"Verarbeite Datei: {file_name}")  # Debug-Output
+    logging.info(f"Processing file: {file_name}")
 
     participant, task, date = extract_file_info(file_name)
 
-    # Load the data
     data = pd.read_csv(file_path)
-
-    # Ensure the 'GSR' column exists
     if "GSR" not in data.columns:
-        raise KeyError(f"Die Datei '{file_name}' enthält keine 'GSR'-Spalte.")
+        raise KeyError(f"The file '{file_name}' does not contain a 'GSR' column.")
 
-    # Extract the GSR signal
-    raw_signal = data["GSR"]
+    raw_signal = data["GSR"].dropna().values
 
-    # Process the GSR signal
-    processed_signal, info = nk.eda_process(raw_signal, sampling_rate=SAMPLING_RATE, method="neurokit")
+    if len(raw_signal) < WINDOW_LENGTH:
+        logging.warning(f"Signal too short for interval processing: {file_name}")
+        return []
 
-    # Extract features
-    features_df = nk.eda_analyze(processed_signal, sampling_rate=SAMPLING_RATE, method="interval-related")
+    results = []
+    slice_count = 1
+    for start in range(0, len(raw_signal) - WINDOW_LENGTH + 1, STEP_SIZE):
+        end = start + WINDOW_LENGTH
+        window = raw_signal[start:end]
 
-    # Convert features to dictionary and add metadata
-    if isinstance(features_df, pd.DataFrame):
-        features = features_df.to_dict(orient="records")[0]
-    else:
-        features = features_df
+        try:
+            processed_signal, _ = nk.eda_process(window, sampling_rate=SAMPLING_RATE)
+            features_df = nk.eda_analyze(processed_signal, sampling_rate=SAMPLING_RATE, method="interval-related")
 
-    # Add metadata
-    features["Participant"] = participant
-    features["Task"] = task
-    features["Date"] = date
+            if isinstance(features_df, pd.DataFrame):
+                features = features_df.to_dict(orient="records")[0]
+            else:
+                features = features_df
 
-    return features
+            features["Participant"] = participant
+            features["Task"] = task
+            features["Date"] = date
+            features["Slice"] = slice_count
+
+            results.append(features)
+            slice_count += 1
+
+        except Exception as e:
+            logging.error(f"Error processing slice {slice_count} in file {file_name}: {e}")
+            continue
+
+    return results
 
 def process_filtered_files(filtered_folder, output_folder):
-    """
-    Processes all GSR files in the specified folder and saves the extracted features.
-    
-    Parameters:
-        filtered_folder (str): Path to the folder containing GSR files.
-        output_folder (str): Path to the folder where results will be saved.
-    """
     os.makedirs(output_folder, exist_ok=True)
-    gsr_features = []
-    # Walk through the folder and process each file
+    all_features = []
+
     for root, _, files in os.walk(filtered_folder):
         for file in files:
-            if file.endswith("_GSR.csv"):  # Process only files ending with '_GSR.csv'
+            if file.endswith("_GSR.csv"):
                 file_path = os.path.join(root, file)
                 try:
-                    features = process_single_file(file_path)
-                    gsr_features.append(features)
+                    features_list = process_single_file(file_path)
+                    all_features.extend(features_list)
                 except KeyError as e:
-                    print(f"Warnung: {e}")  # Warn about missing 'GSR' column
+                    logging.warning(e)
                 except Exception as e:
-                    print(f"Fehler bei der Verarbeitung der Datei {file}: {e}")
+                    logging.error(f"Error processing file {file}: {e}")
 
-    # Save the results
     output_file = os.path.join(output_folder, "gsr_features.csv")
-    df = pd.DataFrame(gsr_features)
-    # Sort columns and rows
-    columns_order = ["Participant", "Task", "Date"] + [col for col in df.columns if col not in ["Participant", "Task", "Date"]]
-    df = df[columns_order]
-    df = df.sort_values(by=["Participant", "Task", "Date"])
+    df = pd.DataFrame(all_features)
 
-    # Save to CSV
-    df.to_csv(output_file, index=False)
-    print(f"Alle Features wurden gespeichert unter: {output_file}")
+    if not df.empty:
+        columns_order = ["Participant", "Task", "Date", "Slice"] + [col for col in df.columns if col not in ["Participant", "Task", "Date", "Slice"]]
+        df = df[columns_order]
+        df = df.sort_values(by=["Participant", "Task", "Date", "Slice"])
+        df.to_csv(output_file, index=False)
+        logging.info(f"All GSR features have been saved to: {output_file}")
+    else:
+        logging.warning("No GSR features were extracted.")
 
 # Main execution
 if __name__ == "__main__":
-    # Define input and output folders
     filtered_folder = const.FILTERED_DIR
     output_folder = os.path.join(const.OUTPUT_DIR, "dataset7")
 
-    # Process files
+    logging.info("Starting GSR feature extraction with sliding window...")
     process_filtered_files(filtered_folder, output_folder)
+    logging.info("Processing complete.")

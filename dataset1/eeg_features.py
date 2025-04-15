@@ -4,6 +4,8 @@ import neurokit2 as nk
 import os
 import warnings
 import sys
+
+# Ermöglicht Import aus übergeordnetem Verzeichnis
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import constants as const
 from utils import extract_scalar_features
@@ -17,6 +19,9 @@ os.makedirs(output_folder, exist_ok=True)
 
 # Parameters
 SAMPLING_RATE = 500
+window_length_samples = int(const.INTERVAL * SAMPLING_RATE)
+step_samples = int(const.STEP * SAMPLING_RATE)
+
 participants = range(1, 26)
 tasks = range(1, 6)
 eeg_channels = ["P7", "P4", "Cz", "Pz", "P3", "P8", "O1", "O2", "T8", "F8", "C4", "F4", "Fz", "C3", "F3", "T7", "F7"]
@@ -25,7 +30,7 @@ bands = ["Gamma", "Beta", "Alpha", "Theta", "Delta"]
 # Define columns
 task_feature_columns = [f"{band}_Ch{ch}" for ch in range(1, len(eeg_channels) + 1) for band in bands]
 baseline_feature_columns = [f"Baseline_{col}" for col in task_feature_columns]
-columns = ["Participant", "Task"] + task_feature_columns + baseline_feature_columns
+columns = ["Participant", "Task", "Slice"] + task_feature_columns + baseline_feature_columns
 
 # Process EEG data
 def process_eeg():
@@ -35,7 +40,7 @@ def process_eeg():
         participant_id = f"{participant:02}"
 
         # Process baseline
-        baseline_file = f"{base_dir}/EEG_Baseline_P_{participant_id}.csv"
+        baseline_file = os.path.join(base_dir, f"EEG_Baseline_P_{participant_id}.csv")
         baseline_features = {}
         if os.path.exists(baseline_file):
             try:
@@ -53,23 +58,38 @@ def process_eeg():
 
         # Process tasks
         for task in tasks:
-            task_file = f"{base_dir}/EEG_Task {task}_P_{participant_id}.csv"
+            task_file = os.path.join(base_dir, f"EEG_Task {task}_P_{participant_id}.csv")
             if os.path.exists(task_file):
                 try:
                     task_data = pd.read_csv(task_file)
-                    combined_features = {"Participant": participant, "Task": task}
+                    total_samples = len(task_data)
+                    slice_count = 1
+                    start_idx = 0
 
-                    for idx, channel in enumerate(eeg_channels):
-                        if channel in task_data.columns:
-                            eeg_matrix = task_data[channel].dropna().values.reshape(1, -1)
-                            res = nk.eeg_power(eeg_matrix, sampling_rate=SAMPLING_RATE)
-                            if "Channel" in res.columns:
-                                res.drop(columns=["Channel"], inplace=True)
-                            for i, band in enumerate(bands):
-                                combined_features[f"{band}_Ch{idx + 1}"] = res.iloc[0, i]
+                    while start_idx + window_length_samples <= total_samples:
+                        combined_features = {
+                            "Participant": participant,
+                            "Task": task,
+                            "Slice": slice_count
+                        }
 
-                    combined_features.update(baseline_features)  # Add baseline features
-                    results.append(combined_features)
+                        for idx, channel in enumerate(eeg_channels):
+                            if channel in task_data.columns:
+                                segment = task_data[channel].dropna().values[start_idx:start_idx + window_length_samples]
+                                if len(segment) == window_length_samples:
+                                    eeg_matrix = segment.reshape(1, -1)
+                                    res = nk.eeg_power(eeg_matrix, sampling_rate=SAMPLING_RATE)
+                                    if "Channel" in res.columns:
+                                        res.drop(columns=["Channel"], inplace=True)
+                                    for i, band in enumerate(bands):
+                                        combined_features[f"{band}_Ch{idx + 1}"] = res.iloc[0, i]
+
+                        combined_features.update(baseline_features)
+                        results.append(combined_features)
+
+                        slice_count += 1
+                        start_idx += step_samples
+
                 except Exception as e:
                     print(f"Error processing Task {task} for Participant {participant_id}: {e}")
 

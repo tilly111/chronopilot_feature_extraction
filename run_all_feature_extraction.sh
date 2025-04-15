@@ -1,8 +1,7 @@
 # NOTE make sure you source correctly
-source ~/PycharmProjects/ghent-colab/venv/bin/activate
+source ~/Users/mariya_ty/Desktop/BA projekt
 
 echo $PWD
-
 # dataset1
 python chronopilot_feature_extraction/dataset1/ecg_features.py &
 python chronopilot_feature_extraction/dataset1/eda_features.py &

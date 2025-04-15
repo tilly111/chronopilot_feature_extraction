@@ -16,12 +16,13 @@ os.makedirs(output_folder, exist_ok=True)
 
 # Sampling rate and participants/tasks
 SAMPLING_RATE = 512
+window_length = int(const.INTERVAL * SAMPLING_RATE)
+step = int(const.STEP * SAMPLING_RATE)
 participants = range(1, 26)
 tasks = range(1, 6)
 
 # ECG columns to process
 ecg_columns = ["ECG LL-RA CAL", "ECG LA-RA CAL", "ECG Vx-RL CAL"]
-
 
 # Process ECG data
 def process_ecg():
@@ -41,7 +42,6 @@ def process_ecg():
                     if col in baseline_data.columns:
                         ecg_signals, _ = nk.ecg_process(baseline_data[col].dropna().values, sampling_rate=SAMPLING_RATE)
                         analyzed_baseline = nk.ecg_analyze(ecg_signals, sampling_rate=SAMPLING_RATE, method="interval-related")
-                        # Add Participant and Baseline features directly in correct order
                         baseline_features[col] = {f"Baseline_{key}": val for key, val in extract_scalar_features(analyzed_baseline).items()}
                     else:
                         print(f"Column '{col}' missing in {baseline_file}")
@@ -60,14 +60,27 @@ def process_ecg():
                     task_data = pd.read_csv(task_file)
                     for col in ecg_columns:
                         if col in task_data.columns:
-                            ecg_signals, _ = nk.ecg_process(task_data[col].dropna().values, sampling_rate=SAMPLING_RATE)
-                            analyzed_task = nk.ecg_analyze(ecg_signals, sampling_rate=SAMPLING_RATE, method="interval-related")
+                            ecg_signal = task_data[col].dropna().values
+                            total_samples = len(ecg_signal)
+                            start_idx = 0
+                            slice_count = 1
 
-                            # Combine task and baseline features directly in the desired order
-                            combined_features = {"Participant": participant, "Task": task}
-                            combined_features.update(extract_scalar_features(analyzed_task))
-                            combined_features.update(baseline_features[col])
-                            results[col].append(combined_features)
+                            while start_idx + window_length <= total_samples:
+                                segment = ecg_signal[start_idx:start_idx + window_length]
+                                ecg_signals, _ = nk.ecg_process(segment, sampling_rate=SAMPLING_RATE)
+                                analyzed_task = nk.ecg_analyze(ecg_signals, sampling_rate=SAMPLING_RATE, method="interval-related")
+
+                                combined_features = {
+                                    "Participant": participant,
+                                    "Task": task,
+                                    "Slice": slice_count
+                                }
+                                combined_features.update(extract_scalar_features(analyzed_task))
+                                combined_features.update(baseline_features[col])
+                                results[col].append(combined_features)
+
+                                start_idx += step
+                                slice_count += 1
                         else:
                             print(f"Column '{col}' missing in {task_file}")
                 except Exception as e:

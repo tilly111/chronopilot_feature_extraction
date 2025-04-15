@@ -2,14 +2,19 @@ import pandas as pd
 import neurokit2 as nk
 import os
 import warnings
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
+from utils import extract_scalar_features
 
 warnings.filterwarnings("ignore")
-
-base_dir = "dataset1_SenseCobot/EDA_Empatica_Signals"
-output_folder = "agg_data/dataset1"
+base_dir = os.path.join(const.BASE_DIR,"dataset1_SenseCobot/EDA_Empatica_Signals")
+output_folder = os.path.join(const.OUTPUT_DIR, "dataset1")
 os.makedirs(output_folder, exist_ok=True)
 
-SAMPLING_RATE = 4
+SAMPLING_RATE = 1
+window_length = int(const.INTERVAL * SAMPLING_RATE)
+step = int(const.STEP * SAMPLING_RATE)
 
 participants = range(1, 22)
 tasks = range(1, 6)
@@ -17,15 +22,12 @@ tasks = range(1, 6)
 def extract_scalar_features(features):
     return {key: (val.iloc[0] if isinstance(val, pd.Series) else val) for key, val in features.items()}
 
-# Sliding-Window-Parameter
-window_length = pd.Timedelta(seconds=72)  
-step = pd.Timedelta(seconds=20)           
 results = []
 
 for participant in participants:
-    participant_id = f"{participant:02}"  
+    participant_id = f"{participant:02}"
     baseline_file = os.path.join(base_dir, f"EDA_Empatica_Baseline_P_{participant_id}.csv")
-    
+
     # Baseline-Features 
     baseline_features = {}
     if os.path.exists(baseline_file):
@@ -48,45 +50,34 @@ for participant in participants:
             print(f"Error processing baseline for participant {participant_id}: {e}")
     else:
         print(f"Baseline file not found for participant {participant_id}: {baseline_file}")
-    
+
     for task in tasks:
         task_file = os.path.join(base_dir, f"EDA_Empatica_Task {task}_P_{participant_id}.csv")
         if os.path.exists(task_file):
             try:
                 task_data = pd.read_csv(task_file)
-                # Prüfung auf erforderliche Spalten "EDA" und "Timestamp"
-                if "EDA" not in task_data.columns or "Timestamp" not in task_data.columns:
-                    missing = []
-                    if "EDA" not in task_data.columns:
-                        missing.append("EDA")
-                    if "Timestamp" not in task_data.columns:
-                        missing.append("Timestamp")
-                    print(f"Missing columns {missing} in {task_file}")
+                if "EDA" not in task_data.columns:
+                    print(f"Missing column 'EDA' in {task_file}")
                     continue
 
-                task_data["Timestamp"] = pd.to_datetime(task_data["Timestamp"])
-                start_time = task_data["Timestamp"].min()
-                end_time = task_data["Timestamp"].max()
+                eda_signal = task_data["EDA"].dropna().values
+                total_samples = len(eda_signal)
 
-                current_start = start_time
-                slice_count = 1  
+                slice_count = 1
+                start_idx = 0
 
-                while current_start + window_length <= end_time:
-                    current_end = current_start + window_length
-                    window_data = task_data[(task_data["Timestamp"] >= current_start) &
-                                            (task_data["Timestamp"] < current_end)]
-                    
-                    if len(window_data) < 10:
-                        print(f"Insufficient data for participant {participant_id}, Task {task} in window starting at {current_start}")
-                        current_start += step
+                while start_idx + window_length <= total_samples:
+                    window_signal = eda_signal[start_idx:start_idx + window_length]
+
+                    if len(window_signal) < 10:
+                        print(f"Insufficient data for participant {participant_id}, Task {task}, Slice {slice_count}")
+                        start_idx += step
                         continue
 
-                    window_eda = window_data["EDA"].dropna().values
-                    processed_window, _ = nk.eda_process(window_eda, sampling_rate=SAMPLING_RATE)
+                    processed_window, _ = nk.eda_process(window_signal, sampling_rate=SAMPLING_RATE)
                     analyzed_window = nk.eda_analyze(processed_window, sampling_rate=SAMPLING_RATE, method="interval-related")
                     window_features = extract_scalar_features(analyzed_window)
 
-                    # Zusammenführen der Features inklusive Participant, Task, Slice und Baseline-Features
                     combined_features = {
                         "Participant": participant,
                         "Task": task,
@@ -97,8 +88,8 @@ for participant in participants:
                     results.append(combined_features)
 
                     slice_count += 1
-                    current_start += step  
-                    
+                    start_idx += step
+
             except Exception as e:
                 print(f"Error processing task file for participant {participant_id}, Task {task}: {e}")
         else:

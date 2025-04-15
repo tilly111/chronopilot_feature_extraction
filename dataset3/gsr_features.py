@@ -2,29 +2,28 @@ import pandas as pd
 import neurokit2 as nk
 import os
 import warnings
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
+from utils import extract_scalar_features
 
 warnings.filterwarnings("ignore")
 
-
-base_dir = os.path.join("dataset3_MAUS", "Data", "Raw_data")
-output_folder = os.path.join("agg_data", "dataset3")
+base_dir = os.path.join(const.BASE_DIR, "dataset3_MAUS/Data/Raw_data")
+output_folder = os.path.join(const.OUTPUT_DIR, "dataset3")
 os.makedirs(output_folder, exist_ok=True)
 
-
-# Helper function to extract scalar features
-def extract_scalar_features(features):
-    return {key: (val.iloc[0] if isinstance(val, pd.Series) else val) for key, val in features.items()}
-
-
-SAMPLING_RATE = 256  
-participants = range(2, 26)  
+participants = range(1, 26)  # P01 included now
 results = []
 
-# Window settings in samples (72 sec window, 20 sec step)
-window_length_samples = 72 * SAMPLING_RATE  # 18432 samples
-step_samples = 20 * SAMPLING_RATE           # 5120 samples
-
 for participant in participants:
+    # Use 128 Hz for participant 1, 256 Hz for all others
+    sampling_rate = 128 if participant == 1 else 256
+
+    # Window settings in samples based on participant-specific sampling rate
+    window_length_samples = const.INTERVAL * sampling_rate
+    step_samples = const.STEP * sampling_rate
+
     participant_dir = os.path.join(base_dir, f"{participant:03}")
     resting_file = os.path.join(participant_dir, "inf_resting.csv")
     task_file = os.path.join(participant_dir, "inf_gsr.csv")
@@ -48,8 +47,8 @@ for participant in participants:
             print(f"Baseline signal too short for participant {participant}. Skipping.")
             continue
 
-        processed_baseline, _ = nk.eda_process(baseline_signal, sampling_rate=SAMPLING_RATE)
-        analyzed_baseline = nk.eda_analyze(processed_baseline, sampling_rate=SAMPLING_RATE, method="interval-related")
+        processed_baseline, _ = nk.eda_process(baseline_signal, sampling_rate=sampling_rate)
+        analyzed_baseline = nk.eda_analyze(processed_baseline, sampling_rate=sampling_rate, method="interval-related")
         baseline_features = {f"Baseline_{key}": val for key, val in extract_scalar_features(analyzed_baseline).items()}
 
         # Process task data for each column in the CSV
@@ -68,8 +67,8 @@ for participant in participants:
                 end_idx = start_idx + window_length_samples
                 window_segment = signal[start_idx:end_idx]
 
-                processed_task, _ = nk.eda_process(window_segment, sampling_rate=SAMPLING_RATE)
-                analyzed_task = nk.eda_analyze(processed_task, sampling_rate=SAMPLING_RATE, method="interval-related")
+                processed_task, _ = nk.eda_process(window_segment, sampling_rate=sampling_rate)
+                analyzed_task = nk.eda_analyze(processed_task, sampling_rate=sampling_rate, method="interval-related")
                 task_features = extract_scalar_features(analyzed_task)
 
                 combined_features = {

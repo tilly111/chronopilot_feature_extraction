@@ -1,12 +1,12 @@
 # Aggregating a Well-Being Dataset
 
-## 📖 Overview
+## Overview
 
 This project aggregates physiological datasets and extracts features to develop a robust classifier for well-being states. Physiological signals such as ECG, EDA, PPG, EEG, EMG and skin temperature are processed and labeled based on established psychological models like PANAS, NASA-TLX, and the Russel Circumplex Model.
 
 ---
 
-## 🚀 Features
+## Features
 
 - **Signal Processing**: Supports ECG, EDA, PPG, EEG, and skin temperature.
 - **Feature Extraction**: Time-domain, frequency-domain, and nonlinear metrics.
@@ -15,7 +15,7 @@ This project aggregates physiological datasets and extracts features to develop 
 
 ---
 
-## 📊 Datasets Used
+## Datasets Used
 
 1. **SenseCobot**  
    - **Focus**: Stress and cognitive load during collaborative robotics tasks.  
@@ -96,7 +96,7 @@ project/
 
 ---
 
-## 📜 Usage
+## Usage
 
 ### Step 1: Prepare Data
 Navigate to `dataset7` and run `filtered_data.py` to create necessary folders and prepare filtered data:
