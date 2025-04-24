@@ -1,19 +1,14 @@
 import os
 import pandas as pd
 import neurokit2 as nk
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import constants as const
+from utils import extract_scalar_features
 
-# Helper function to extract scalar features
-def extract_scalar_features(features):
-    scalar = {}
-    for key, value in features.items():
-        if isinstance(value, pd.Series):
-            scalar[key] = value.iloc[0]
-        else:
-            scalar[key] = value
-    return scalar
-
-# Base directories and sampling rate
-input_dir = "dataset8_POPANE"
+# Base directories
+input_dir = os.path.join(const.BASE_DIR, "dataset8_POPANE")
+output_file = os.path.join(const.OUTPUT_DIR, "dataset8/eda_features.csv")
 output_file = os.path.join("agg_data", "dataset8", "eda_features.csv")
 baseline_dir = os.path.join(input_dir, "Baselines")
 SAMPLING_RATE = 1000
