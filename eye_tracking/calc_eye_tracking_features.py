@@ -25,10 +25,10 @@ JULIA_PARTICIPANTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
 
 confidence_threshold = 0.8
 
-tag = "bsl"  # bsl = baseline subtraction; no_bsl = no baseline subtraction; bs = baseline
+tag = "no_bsl"  # bsl = baseline subtraction; no_bsl = no baseline subtraction; bs = baseline
 
-# for the sake of automation we loop through all time windows
-for tw in [1, 2, 5, 10, 15, 20, 30, 45, 60]:
+# for the sake of automation, we loop through all time windows
+for tw in [1, 2, 5, 10, 15, 20, 30, 45, 60]:  #
     all_exp_fixations_features = pd.DataFrame(
         columns=["time", "robot", "participant", "slice"] + ["fixation_frequency", "fixation_duration_mean",
                                                              "fixation_duration_max", "fixation_dispersion_mean",
@@ -51,7 +51,12 @@ for tw in [1, 2, 5, 10, 15, 20, 30, 45, 60]:
                                                              "pupil_diameter1_3d_mean",
                                                              "pupil_diameter1_3d_max",
                                                              "pupil_diameter1_3d_dev",
-                                                             "pupil_diameter1_3d_ipa"])
+                                                             "pupil_diameter1_3d_ipa",
+                                                             "pupil_horizontal_movement",
+                                                             "pupil_vertical_movement",
+                                                             "pupil_movement_speed",
+                                                             "pupil_saccade_rate",
+                                                             "avg_fixation_duration"])
 
     for t in JULIA_TIMES:
         for r in JULIA_ROBOTS:
@@ -68,37 +73,37 @@ for tw in [1, 2, 5, 10, 15, 20, 30, 45, 60]:
                         f"/Volumes/Data/chronopilot/Julia_study/pupil/{t}-{r}/{p}-{t}_{r}_fixations_baseline.csv")
 
                     # remove not confident data
-                    df_pupillometry_baseline = df_pupillometry_baseline.loc[
-                        df_pupillometry_baseline["confidence"] > confidence_threshold]
-                    df_pupillometry_experiment = df_pupillometry_experiment.loc[
-                        df_pupillometry_experiment["confidence"] > confidence_threshold]
-                    df_fixations_baseline = df_fixations_baseline.loc[
-                        df_fixations_baseline["confidence"] > confidence_threshold]
-                    df_fixations_experiment = df_fixations_experiment.loc[
-                        df_fixations_experiment["confidence"] > confidence_threshold]
+                    # df_pupillometry_baseline = df_pupillometry_baseline.loc[
+                    #     df_pupillometry_baseline["confidence"] > confidence_threshold]
+                    # df_pupillometry_experiment = df_pupillometry_experiment.loc[
+                    #     df_pupillometry_experiment["confidence"] > confidence_threshold]
+                    # df_fixations_baseline = df_fixations_baseline.loc[
+                    #     df_fixations_baseline["confidence"] > confidence_threshold]
+                    # df_fixations_experiment = df_fixations_experiment.loc[
+                    #     df_fixations_experiment["confidence"] > confidence_threshold]
 
                     # remove unlogical norm values
-                    df_pupillometry_baseline = df_pupillometry_baseline.loc[
-                        (df_pupillometry_baseline["norm_pos_x"] >= 0) & (df_pupillometry_baseline["norm_pos_x"] <= 1.1)]
-                    df_pupillometry_experiment = df_pupillometry_experiment.loc[
-                        (df_pupillometry_experiment["norm_pos_y"] >= 0) & (df_pupillometry_experiment["norm_pos_y"] <= 1.1)]
-                    df_fixations_baseline = df_fixations_baseline.loc[
-                        (df_fixations_baseline["norm_pos_x"] >= 0) & (df_fixations_baseline["norm_pos_x"] <= 1.1)]
-                    df_fixations_experiment = df_fixations_experiment.loc[
-                        (df_fixations_experiment["norm_pos_y"] >= 0) & (df_fixations_experiment["norm_pos_y"] <= 1.1)]
+                    # df_pupillometry_baseline = df_pupillometry_baseline.loc[
+                    #     (df_pupillometry_baseline["norm_pos_x"] >= 0) & (df_pupillometry_baseline["norm_pos_x"] <= 1.1)]
+                    # df_pupillometry_experiment = df_pupillometry_experiment.loc[
+                    #     (df_pupillometry_experiment["norm_pos_y"] >= 0) & (df_pupillometry_experiment["norm_pos_y"] <= 1.1)]
+                    # df_fixations_baseline = df_fixations_baseline.loc[
+                    #     (df_fixations_baseline["norm_pos_x"] >= 0) & (df_fixations_baseline["norm_pos_x"] <= 1.1)]
+                    # df_fixations_experiment = df_fixations_experiment.loc[
+                    #     (df_fixations_experiment["norm_pos_y"] >= 0) & (df_fixations_experiment["norm_pos_y"] <= 1.1)]
 
                     # remove unlogical diameter values
-                    df_pupillometry_baseline.loc[df_pupillometry_baseline['diameter0_2d'] > 150, 'diameter0_2d'] = np.NAN
-                    df_pupillometry_baseline.loc[df_pupillometry_baseline['diameter1_2d'] > 150, 'diameter1_2d'] = np.NAN
-                    df_pupillometry_baseline.loc[df_pupillometry_baseline['diameter0_3d'] > 10, 'diameter0_3d'] = np.NAN
-                    df_pupillometry_baseline.loc[df_pupillometry_baseline['diameter1_3d'] > 10, 'diameter1_3d'] = np.NAN
+                    # df_pupillometry_baseline.loc[df_pupillometry_baseline['diameter0_2d'] > 150, 'diameter0_2d'] = np.NAN
+                    # df_pupillometry_baseline.loc[df_pupillometry_baseline['diameter1_2d'] > 150, 'diameter1_2d'] = np.NAN
+                    # df_pupillometry_baseline.loc[df_pupillometry_baseline['diameter0_3d'] > 10, 'diameter0_3d'] = np.NAN
+                    # df_pupillometry_baseline.loc[df_pupillometry_baseline['diameter1_3d'] > 10, 'diameter1_3d'] = np.NAN
 
-                    df_pupillometry_experiment.loc[
-                        df_pupillometry_experiment['diameter0_2d'] > 150, 'diameter0_2d'] = np.NAN
-                    df_pupillometry_experiment.loc[
-                        df_pupillometry_experiment['diameter1_2d'] > 150, 'diameter1_2d'] = np.NAN
-                    df_pupillometry_experiment.loc[df_pupillometry_experiment['diameter0_3d'] > 10, 'diameter0_3d'] = np.NAN
-                    df_pupillometry_experiment.loc[df_pupillometry_experiment['diameter1_3d'] > 10, 'diameter1_3d'] = np.NAN
+                    # df_pupillometry_experiment.loc[
+                    #     df_pupillometry_experiment['diameter0_2d'] > 150, 'diameter0_2d'] = np.NAN
+                    # df_pupillometry_experiment.loc[
+                    #     df_pupillometry_experiment['diameter1_2d'] > 150, 'diameter1_2d'] = np.NAN
+                    # df_pupillometry_experiment.loc[df_pupillometry_experiment['diameter0_3d'] > 10, 'diameter0_3d'] = np.NAN
+                    # df_pupillometry_experiment.loc[df_pupillometry_experiment['diameter1_3d'] > 10, 'diameter1_3d'] = np.NAN
 
                     # calculate features
                     if tag == "bsl":
@@ -130,9 +135,9 @@ for tw in [1, 2, 5, 10, 15, 20, 30, 45, 60]:
             f"/Volumes/Data/chronopilot/Julia_study/features/all_exp_pupil_features_tw_{tw}_bls.csv", index=False)
     elif tag == "no_bsl":
         all_exp_fixations_features.to_csv(
-            f"/Volumes/Data/chronopilot/Julia_study/features/all_exp_fixations_features_tw_{tw}.csv", index=False)
+            f"/Volumes/Data/chronopilot/Julia_study/features/all_exp_fixations_features_tw_{tw}_new.csv", index=False)
         all_exp_pupil_features.to_csv(
-            f"/Volumes/Data/chronopilot/Julia_study/features/all_exp_pupil_features_tw_{tw}.csv", index=False)
+            f"/Volumes/Data/chronopilot/Julia_study/features/all_exp_pupil_features_tw_{tw}_new.csv", index=False)
     elif tag == "bs":
         all_exp_fixations_features.to_csv(
             f"/Volumes/Data/chronopilot/Julia_study/features/all_exp_fixations_features_baseline.csv", index=False)

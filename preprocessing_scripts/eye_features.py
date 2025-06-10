@@ -24,15 +24,15 @@ def calc_pupillometry_features(bsl_data, exp_data, slicing) -> tuple[list, list,
     bsl_df = pd.DataFrame()
     bsl_df['distance'] = distance(bsl_data["norm_pos_x"], bsl_data["norm_pos_y"], bsl_data["norm_pos_x"].shift(-1),
                                   bsl_data["norm_pos_y"].shift(-1))
-
+    
     bsl_min_speed = bsl_df['distance'].min()
     bsl_max_speed = bsl_df['distance'].max()
     bsl_mean_speed = bsl_df['distance'].mean()
     bsl_std_speed = bsl_df['distance'].std()
-
+    
     # Create feature matrix
     X = bsl_data[['norm_pos_x', 'norm_pos_y']].values
-
+    
     # Silhouette Method -> starts at 2
     silhouette_scores = []
     for i in range(2, 11):
@@ -40,54 +40,54 @@ def calc_pupillometry_features(bsl_data, exp_data, slicing) -> tuple[list, list,
         cluster_labels = kmeans.fit_predict(X)
         silhouette_avg = silhouette_score(X, cluster_labels)
         silhouette_scores.append(silhouette_avg)
-
+    
     # plt.figure(figsize=(8, 6))
     # plt.plot(range(2, 11), silhouette_scores, marker='o', linestyle='--')
     # plt.xlabel('Number of clusters')
     # plt.ylabel('Silhouette Score')
     # plt.title('Silhouette Method')
     # plt.show()
-
+    
     bsl_number_clusters = np.max(silhouette_scores) / 120  # max silhouette score is the best fitting of clusters
     # bsl_number_clusters = np.nan
-
+    
     # TODO we need to interpolate the diameter values to do not have NaNs in the data
     for col in ['diameter0_2d', 'diameter1_2d', 'diameter0_3d', 'diameter1_3d']:
         bsl_data[col] = bsl_data[col].interpolate()
         if np.isnan(bsl_data[col].iloc[0]):
             # bsl_data[col].iloc[0] = bsl_data[col].iloc[1]
             bsl_data.loc[0, col] = float(bsl_data[col].iloc[1])  # TODO does this throw an error
-
+    
     # diameter change
     bsl_df['diameter2d_change'] = distance(bsl_data["diameter0_2d"], bsl_data["diameter1_2d"],
                                            bsl_data["diameter0_2d"].shift(-1), bsl_data["diameter1_2d"].shift(-1))
     bsl_df['diameter3d_change'] = distance(bsl_data["diameter0_3d"], bsl_data["diameter1_3d"],
                                            bsl_data["diameter0_3d"].shift(-1), bsl_data["diameter1_3d"].shift(-1))
-
+    
     bsl_min_diameter2d = bsl_df['diameter2d_change'].min()
     bsl_max_diameter2d = bsl_df['diameter2d_change'].max()
     bsl_mean_diameter2d = bsl_df['diameter2d_change'].mean()
-
+    
     bsl_min_diameter3d = bsl_df['diameter3d_change'].min()
     bsl_max_diameter3d = bsl_df['diameter3d_change'].max()
     bsl_mean_diameter3d = bsl_df['diameter3d_change'].mean()
-
+    
     bsl_features = [bsl_min_speed, bsl_max_speed, bsl_mean_speed, bsl_std_speed, bsl_number_clusters,
                     bsl_min_diameter2d, bsl_max_diameter2d, bsl_mean_diameter2d, bsl_min_diameter3d, bsl_max_diameter3d,
                     bsl_mean_diameter3d]
-
+    
     # exp
     exp_df = pd.DataFrame()
     exp_df['distance'] = distance(exp_data["norm_pos_x"], exp_data["norm_pos_y"], exp_data["norm_pos_x"].shift(-1),
                                   exp_data["norm_pos_y"].shift(-1))
-
+    
     exp_min_speed = exp_df['distance'].min()
     exp_max_speed = exp_df['distance'].max()
     exp_mean_speed = exp_df['distance'].mean()
-
+    
     # Create feature matrix
     X = exp_data[['norm_pos_x', 'norm_pos_y']].values
-
+    
     # Silhouette Method -> starts at 2
     silhouette_scores = []
     for i in range(2, 11):
@@ -95,14 +95,14 @@ def calc_pupillometry_features(bsl_data, exp_data, slicing) -> tuple[list, list,
         cluster_labels = kmeans.fit_predict(X)
         silhouette_avg = silhouette_score(X, cluster_labels)
         silhouette_scores.append(silhouette_avg)
-
+    
     # plt.figure(figsize=(8, 6))
     # plt.plot(range(2, 11), silhouette_scores, marker='o', linestyle='--')
     # plt.xlabel('Number of clusters')
     # plt.ylabel('Silhouette Score')
     # plt.title('Silhouette Method')
     # plt.show()
-
+    
     if slicing:
         exp_number_clusters = np.max(silhouette_scores) / int(
             60)  # max silhouette score is the best fitting of clusters
@@ -110,7 +110,7 @@ def calc_pupillometry_features(bsl_data, exp_data, slicing) -> tuple[list, list,
         exp_number_clusters = np.max(silhouette_scores) / int(
             exp_data["timestamp"].iloc[-1])  # max silhouette score is the best fitting of clusters
     # exp_number_clusters = np.nan
-
+    
     # TODO we need to interpolate the diameter values to do not have NaNs in the data
     for col in ['diameter0_2d', 'diameter1_2d', 'diameter0_3d', 'diameter1_3d']:
         exp_data[col] = exp_data[col].interpolate()
@@ -118,25 +118,25 @@ def calc_pupillometry_features(bsl_data, exp_data, slicing) -> tuple[list, list,
             # bsl_data[col].iloc[0] = bsl_data[col].iloc[1]
             exp_data.loc[0, col] = float(exp_data[col].iloc[1])  # TODO does this throw an error
         # print(f"bsl: {exp_data[col].isnull().sum()}")
-
+    
     # diameter change
     exp_df['diameter2d_change'] = distance(exp_data["diameter0_2d"], exp_data["diameter1_2d"],
                                            exp_data["diameter0_2d"].shift(-1), exp_data["diameter1_2d"].shift(-1))
     exp_df['diameter3d_change'] = distance(exp_data["diameter0_3d"], exp_data["diameter1_3d"],
                                            exp_data["diameter0_3d"].shift(-1), exp_data["diameter1_3d"].shift(-1))
-
+    
     exp_min_diameter2d = exp_df['diameter2d_change'].min()
     exp_max_diameter2d = exp_df['diameter2d_change'].max()
     exp_mean_diameter2d = exp_df['diameter2d_change'].mean()
-
+    
     exp_min_diameter3d = exp_df['diameter3d_change'].min()
     exp_max_diameter3d = exp_df['diameter3d_change'].max()
     exp_mean_diameter3d = exp_df['diameter3d_change'].mean()
-
+    
     exp_features = [exp_min_speed, exp_max_speed, exp_mean_speed, exp_number_clusters, exp_min_diameter2d,
                     exp_max_diameter2d, exp_mean_diameter2d, exp_min_diameter3d, exp_max_diameter3d,
                     exp_mean_diameter3d]
-
+    
     return bsl_features, exp_features, [x - y for x, y in zip(exp_features, bsl_features)]
 
 
@@ -152,18 +152,18 @@ def calc_fixations_features(bsl_data, exp_data, slicing) -> tuple[list, list, li
     bsl_df = pd.DataFrame()
     bsl_df['distance'] = distance(bsl_data["norm_pos_x"], bsl_data["norm_pos_y"], bsl_data["norm_pos_x"].shift(-1),
                                   bsl_data["norm_pos_y"].shift(-1))
-
+    
     bsl_min_speed = bsl_df['distance'].min()
     bsl_max_speed = bsl_df['distance'].max()
     bsl_mean_speed = bsl_df['distance'].mean()
-
+    
     bsl_min_duration = bsl_data['duration'].min()
     bsl_max_duration = bsl_data['duration'].max()
     bsl_mean_duration = bsl_data['duration'].mean()
-
+    
     # Create feature matrix
     X = bsl_data[['norm_pos_x', 'norm_pos_y']].values
-
+    
     # Silhouette Method -> starts at 2
     try:
         silhouette_scores = []
@@ -172,28 +172,28 @@ def calc_fixations_features(bsl_data, exp_data, slicing) -> tuple[list, list, li
             cluster_labels = kmeans.fit_predict(X)
             silhouette_avg = silhouette_score(X, cluster_labels)
             silhouette_scores.append(silhouette_avg)
-
+        
         bsl_number_clusters = np.max(silhouette_scores) / 120  # max silhouette score is the best fitting of clusters
     except ValueError:
         print("ValueError in cluster calculatation")
         bsl_number_clusters = np.nan
-
+    
     bsl_min_dispersion = bsl_data["dispersion"].min()
     bsl_max_dispersion = bsl_data["dispersion"].max()
     bsl_mean_dispersion = bsl_data["dispersion"].mean()
-
+    
     # exp
     exp_df = pd.DataFrame()
     exp_df['distance'] = distance(exp_data["norm_pos_x"], exp_data["norm_pos_y"], exp_data["norm_pos_x"].shift(-1),
                                   exp_data["norm_pos_y"].shift(-1))
-
+    
     exp_min_speed = exp_df['distance'].min()
     exp_max_speed = exp_df['distance'].max()
     exp_mean_speed = exp_df['distance'].mean()
-
+    
     # Create feature matrix
     X = exp_data[['norm_pos_x', 'norm_pos_y']].values
-
+    
     # Silhouette Method -> starts at 2
     try:
         silhouette_scores = []
@@ -202,7 +202,7 @@ def calc_fixations_features(bsl_data, exp_data, slicing) -> tuple[list, list, li
             cluster_labels = kmeans.fit_predict(X)
             silhouette_avg = silhouette_score(X, cluster_labels)
             silhouette_scores.append(silhouette_avg)
-
+        
         if slicing:
             exp_number_clusters = np.max(silhouette_scores) / int(60)
         else:
@@ -211,20 +211,20 @@ def calc_fixations_features(bsl_data, exp_data, slicing) -> tuple[list, list, li
     except ValueError:
         print("ValueError in cluster calculatation")
         exp_number_clusters = np.nan
-
+    
     exp_min_dispersion = exp_data["dispersion"].min()
     exp_max_dispersion = exp_data["dispersion"].max()
     exp_mean_dispersion = exp_data["dispersion"].mean()
-
+    
     exp_min_duration = exp_data['duration'].min()
     exp_max_duration = exp_data['duration'].max()
     exp_mean_duration = exp_data['duration'].mean()
-
+    
     bsl_features = [bsl_min_speed, bsl_max_speed, bsl_mean_speed, bsl_number_clusters, bsl_min_dispersion,
                     bsl_max_dispersion, bsl_mean_dispersion, bsl_min_duration, bsl_max_duration, bsl_mean_duration]
     exp_features = [exp_min_speed, exp_max_speed, exp_mean_speed, exp_number_clusters, exp_min_dispersion,
                     exp_max_dispersion, exp_mean_dispersion, exp_min_duration, exp_max_duration, exp_mean_duration]
-
+    
     return bsl_features, exp_features, [x - y for x, y in zip(exp_features, bsl_features)]
 
 
@@ -245,7 +245,7 @@ def calc_pupil_features_baseline(exp_data, time, robot, participant) -> pd.DataF
                                                                                    "pupil_diameter1_3d_max",
                                                                                    "pupil_diameter1_3d_dev",
                                                                                    "pupil_diameter1_3d_ipa"])
-
+    
     # diameter 2d parameters
     bsl_dia_0_2d_max = exp_data["diameter0_2d"].dropna().max()
     bsl_dia_1_2d_max = exp_data["diameter1_2d"].dropna().max()
@@ -265,15 +265,19 @@ def calc_pupil_features_baseline(exp_data, time, robot, participant) -> pd.DataF
     bsl_dia_1_2d_ipa = _ipa(exp_data[["timestamp", "diameter1_2d"]].dropna().to_numpy())
     bsl_dia_0_3d_ipa = _ipa(exp_data[["timestamp", "diameter0_3d"]].dropna().to_numpy())
     bsl_dia_1_3d_ipa = _ipa(exp_data[["timestamp", "diameter1_3d"]].dropna().to_numpy())
-
-    feature_df.loc[0] = [time, robot, participant, 0] + [bsl_dia_0_2d_mean, bsl_dia_0_2d_max, bsl_dia_0_2d_dev, bsl_dia_0_2d_ipa,
-                                                         bsl_dia_1_2d_mean, bsl_dia_1_2d_max, bsl_dia_1_2d_dev, bsl_dia_1_2d_ipa,
-                                                         bsl_dia_0_3d_mean, bsl_dia_0_3d_max, bsl_dia_0_3d_dev, bsl_dia_0_3d_ipa,
-                                                         bsl_dia_1_3d_mean, bsl_dia_1_3d_max, bsl_dia_1_3d_dev, bsl_dia_1_3d_ipa]
+    
+    feature_df.loc[0] = [time, robot, participant, 0] + [bsl_dia_0_2d_mean, bsl_dia_0_2d_max, bsl_dia_0_2d_dev,
+                                                         bsl_dia_0_2d_ipa,
+                                                         bsl_dia_1_2d_mean, bsl_dia_1_2d_max, bsl_dia_1_2d_dev,
+                                                         bsl_dia_1_2d_ipa,
+                                                         bsl_dia_0_3d_mean, bsl_dia_0_3d_max, bsl_dia_0_3d_dev,
+                                                         bsl_dia_0_3d_ipa,
+                                                         bsl_dia_1_3d_mean, bsl_dia_1_3d_max, bsl_dia_1_3d_dev,
+                                                         bsl_dia_1_3d_ipa]
     return feature_df
 
 
-# TODO make Pupil data -> pupil diameter positively correlated with task difficulty
+# NOTE: this is the method for the online dataset
 def calc_pupil_features_tw(exp_data, time_window, time, robot, participant, base_line=None) -> pd.DataFrame:
     # data frame
     feature_df = pd.DataFrame(columns=["time", "robot", "participant", "slice"] + ["pupil_diameter0_2d_mean",
@@ -291,8 +295,13 @@ def calc_pupil_features_tw(exp_data, time_window, time, robot, participant, base
                                                                                    "pupil_diameter1_3d_mean",
                                                                                    "pupil_diameter1_3d_max",
                                                                                    "pupil_diameter1_3d_dev",
-                                                                                   "pupil_diameter1_3d_ipa"])
-
+                                                                                   "pupil_diameter1_3d_ipa",
+                                                                                   "pupil_horizontal_movement",
+                                                                                   "pupil_vertical_movement",
+                                                                                   "pupil_movement_speed",
+                                                                                   "pupil_saccade_rate",
+                                                                                   "avg_fixation_duration"])
+    
     if base_line is not None:
         # diameter 2d parameters
         bsl_dia_0_2d_max = base_line["diameter0_2d"].dropna().max()
@@ -313,13 +322,25 @@ def calc_pupil_features_tw(exp_data, time_window, time, robot, participant, base
         bsl_dia_1_2d_ipa = _ipa(base_line[["timestamp", "diameter1_2d"]].dropna().to_numpy())
         bsl_dia_0_3d_ipa = _ipa(base_line[["timestamp", "diameter0_3d"]].dropna().to_numpy())
         bsl_dia_1_3d_ipa = _ipa(base_line[["timestamp", "diameter1_3d"]].dropna().to_numpy())
-
+        # horizontal and vertical movement
+        bsl_horizontal_movement = base_line["norm_pos_x"].dropna().max() - base_line["norm_pos_x"].dropna().min()
+        bsl_vertical_movement = base_line["norm_pos_y"].dropna().max() - base_line["norm_pos_y"].dropna().min()
+        dx = np.diff(base_line["norm_pos_x"].dropna().to_numpy())
+        dy = np.diff(base_line["norm_pos_y"].dropna().to_numpy())
+        bsl_pupil_movement_speed = np.sum(np.sqrt(dx ** 2 + dy ** 2)) / (
+                base_line["timestamp"].iloc[-1] - base_line["timestamp"].iloc[0])
+        
+        bsl_saccade_rate, bsl_avg_fixation_duration = _saccade_calcs(np.sqrt(dx ** 2 + dy ** 2),
+                                                                     base_line["timestamp"].iloc[-1] -
+                                                                     base_line["timestamp"].iloc[0])
+    
     # time window should be in seconds
-    print(f"shape: {exp_data.shape[0]}")
     # if data are empty
     if exp_data.shape[0] == 0:
         feature_df.loc[0] = [time, robot, participant, 0] + [np.nan] * 10
         return
+    # normalize the timestamp to start at 0
+    exp_data["timestamp"] = exp_data["timestamp"] - exp_data["timestamp"].iloc[0]
     n_time_window = int(np.round(exp_data["timestamp"].iloc[-1] / time_window))
     print(f"{n_time_window} = {exp_data['timestamp'].iloc[-1]} / {(time_window)}")
     for i in range(n_time_window):
@@ -333,7 +354,7 @@ def calc_pupil_features_tw(exp_data, time_window, time, robot, participant, base
             print(f"haaa {exp_tw.shape[0]}")
             print("no values within the confidence threshold")
             continue
-
+        
         # IPA (Index of pupillary activity): IPA0, mean pupil diameter, pupil0 deviation, max pupil0 diameter,
         #   IPA1, mean pupil1 diameter, pupil1 deviation, max pupil diameter1 diameter
         #   0 = left, 1 = right -> bei uns probably anders rum?! aber ist das wichtig?
@@ -343,20 +364,29 @@ def calc_pupil_features_tw(exp_data, time_window, time, robot, participant, base
         dia_1_2d_mean = exp_tw["diameter1_2d"].dropna().mean()
         dia_0_2d_dev = exp_tw["diameter0_2d"].dropna().std()
         dia_1_2d_dev = exp_tw["diameter1_2d"].dropna().std()
-
+        
         dia_0_3d_max = exp_tw["diameter0_3d"].dropna().max()
         dia_1_3d_max = exp_tw["diameter1_3d"].dropna().max()
         dia_0_3d_mean = exp_tw["diameter0_3d"].dropna().mean()
         dia_1_3d_mean = exp_tw["diameter1_3d"].dropna().mean()
         dia_0_3d_dev = exp_tw["diameter0_3d"].dropna().std()
         dia_1_3d_dev = exp_tw["diameter1_3d"].dropna().std()
-
-
+        
         dia_0_2d_ipa = _ipa(exp_tw[["timestamp", "diameter0_2d"]].dropna().to_numpy())
         dia_1_2d_ipa = _ipa(exp_tw[["timestamp", "diameter1_2d"]].dropna().to_numpy())
         dia_0_3d_ipa = _ipa(exp_tw[["timestamp", "diameter0_3d"]].dropna().to_numpy())
         dia_1_3d_ipa = _ipa(exp_tw[["timestamp", "diameter1_3d"]].dropna().to_numpy())
-
+        
+        # horizontal and vertical movement
+        horizontal_movement = exp_tw["norm_pos_x"].dropna().max() - exp_tw["norm_pos_x"].dropna().min()
+        vertical_movement = exp_tw["norm_pos_y"].dropna().max() - exp_tw["norm_pos_y"].dropna().min()
+        dx = np.diff(exp_tw["norm_pos_x"].dropna().to_numpy())
+        dy = np.diff(exp_tw["norm_pos_y"].dropna().to_numpy())
+        pupil_movement_speed = np.sum(np.sqrt(dx ** 2 + dy ** 2)) / (
+                exp_tw["timestamp"].iloc[-1] - exp_tw["timestamp"].iloc[0])
+        saccade_rate, avg_fixation_duration = _saccade_calcs(np.sqrt(dx ** 2 + dy ** 2),
+                                                             exp_tw["timestamp"].iloc[-1] - exp_tw["timestamp"].iloc[0])
+        
         if base_line is not None:
             dia_0_2d_max = dia_0_2d_max - bsl_dia_0_2d_max
             dia_1_2d_max = dia_1_2d_max - bsl_dia_1_2d_max
@@ -364,24 +394,33 @@ def calc_pupil_features_tw(exp_data, time_window, time, robot, participant, base
             dia_1_2d_mean = dia_1_2d_mean - bsl_dia_1_2d_mean
             dia_0_2d_dev = dia_0_2d_dev - bsl_dia_0_2d_dev
             dia_1_2d_dev = dia_1_2d_dev - bsl_dia_1_2d_dev
-
+            
             dia_0_3d_max = dia_0_3d_max - bsl_dia_0_3d_max
             dia_1_3d_max = dia_1_3d_max - bsl_dia_1_3d_max
             dia_0_3d_mean = dia_0_3d_mean - bsl_dia_0_3d_mean
             dia_1_3d_mean = dia_1_3d_mean - bsl_dia_1_3d_mean
             dia_0_3d_dev = dia_0_3d_dev - bsl_dia_0_3d_dev
             dia_1_3d_dev = dia_1_3d_dev - bsl_dia_1_3d_dev
-
+            
             dia_0_2d_ipa = dia_0_2d_ipa - bsl_dia_0_2d_ipa
             dia_1_2d_ipa = dia_1_2d_ipa - bsl_dia_1_2d_ipa
             dia_0_3d_ipa = dia_0_3d_ipa - bsl_dia_0_3d_ipa
             dia_1_3d_ipa = dia_1_3d_ipa - bsl_dia_1_3d_ipa
-
+            
+            horizontal_movement = horizontal_movement - bsl_horizontal_movement
+            vertical_movement = vertical_movement - bsl_vertical_movement
+            pupil_movement_speed = pupil_movement_speed - bsl_pupil_movement_speed
+            saccade_rate = saccade_rate - bsl_saccade_rate
+            avg_fixation_duration = avg_fixation_duration - bsl_avg_fixation_duration
+        
         feature_df.loc[i] = [time, robot, participant, i] + [dia_0_2d_mean, dia_0_2d_max, dia_0_2d_dev, dia_0_2d_ipa,
                                                              dia_1_2d_mean, dia_1_2d_max, dia_1_2d_dev, dia_1_2d_ipa,
                                                              dia_0_3d_mean, dia_0_3d_max, dia_0_3d_dev, dia_0_3d_ipa,
-                                                             dia_1_3d_mean, dia_1_3d_max, dia_1_3d_dev, dia_1_3d_ipa]
-
+                                                             dia_1_3d_mean, dia_1_3d_max, dia_1_3d_dev, dia_1_3d_ipa,
+                                                             horizontal_movement, vertical_movement,
+                                                             pupil_movement_speed,
+                                                             saccade_rate, avg_fixation_duration]
+    
     return feature_df
 
 
@@ -405,14 +444,15 @@ def calc_fixation_features_baseline(exp_data, time_window, time, robot, particip
     # saccade features
     bsl_saccade_frequency, bsl_saccade_durations_mean, bsl_saccade_durations_max, bsl_saccade_speed_mean, bsl_saccade_speed_max = _saccade_features(
         exp_data, time_window)
-
+    
     feature_df.loc[0] = [time, robot, participant, 0] + [bsl_fix_frequency, bsl_fix_duration_mean,
                                                          bsl_fix_duration_max, bsl_fix_dispersion_mean,
                                                          bsl_fix_dispersion_max, bsl_saccade_frequency,
                                                          bsl_saccade_durations_mean, bsl_saccade_durations_max,
                                                          bsl_saccade_speed_mean, bsl_saccade_speed_max]
-
+    
     return feature_df
+
 
 def calc_fixation_features_tw(exp_data, time_window, time, robot, participant, base_line=None) -> pd.DataFrame:
     '''
@@ -470,15 +510,15 @@ def calc_fixation_features_tw(exp_data, time_window, time, robot, participant, b
         fixation_duration_mean = exp_tw["duration"].mean()
         # max fixation duration
         fixation_duration_max = exp_tw["duration"].max()
-
+        
         # calculate dispersion
         fixation_dispersion_mean = np.nanmean(exp_tw["dispersion"])
         fixation_dispersion_max = np.nanmax(exp_tw["dispersion"])
-
+        
         # calcualte saccade features
         saccade_frequency, saccade_durations_mean, saccade_durations_max, saccade_speed_mean, saccade_speed_max = _saccade_features(
             exp_tw, time_window)
-
+        
         if base_line is not None:
             fixation_frequency = fixation_frequency - bsl_fix_frequency
             fixation_duration_mean = fixation_duration_mean - bsl_fix_duration_mean
@@ -490,13 +530,13 @@ def calc_fixation_features_tw(exp_data, time_window, time, robot, participant, b
             saccade_durations_max = saccade_durations_max - bsl_saccade_durations_max
             saccade_speed_mean = saccade_speed_mean - bsl_saccade_speed_mean
             saccade_speed_max = saccade_speed_max - bsl_saccade_speed_max
-
+        
         feature_df.loc[i] = [time, robot, participant, i] + [fixation_frequency, fixation_duration_mean,
                                                              fixation_duration_max, fixation_dispersion_mean,
                                                              fixation_dispersion_max, saccade_frequency,
                                                              saccade_durations_mean, saccade_durations_max,
                                                              saccade_speed_mean, saccade_speed_max]
-
+    
     return feature_df
 
 
@@ -510,7 +550,7 @@ def _saccade_features(tw_df, time_window) -> Tuple[float, float, float, float, f
     # mean saccade frequency
     x_norm = savgol_filter(tw_df["norm_pos_x"], 5, 3)  # TODO find hyperparameters
     y_norm = savgol_filter(tw_df["norm_pos_y"], 5, 3)
-
+    
     velocity_x = np.diff(x_norm) / np.diff(tw_df["timestamp"])
     velocity_y = np.diff(y_norm) / np.diff(tw_df["timestamp"])
     velocity = np.sqrt(velocity_x ** 2 + velocity_y ** 2)
@@ -518,20 +558,20 @@ def _saccade_features(tw_df, time_window) -> Tuple[float, float, float, float, f
     saccade_threshold = 0.3
     saccades = velocity > saccade_threshold
     saccade_count = np.sum(saccades)
-
+    
     saccade_frequency = saccade_count / time_window
-
+    
     # Identify start and end of saccades
     saccade_start_indices = np.where((velocity[:-1] < saccade_threshold) & (velocity[1:] >= saccade_threshold))[
                                 0] + 1
     saccade_end_indices = np.where((velocity[:-1] >= saccade_threshold) & (velocity[1:] < saccade_threshold))[0] + 1
-
+    
     # Calculate saccade durations
     saccade_durations = []
     for start, end in zip(saccade_start_indices, saccade_end_indices):
         duration = tw_df["timestamp"].iloc[end] - tw_df["timestamp"].iloc[start]
         saccade_durations.append(duration)
-
+    
     if len(saccade_durations) == 0:
         print("no saccades found")
         saccade_durations_mean = np.nan
@@ -539,14 +579,14 @@ def _saccade_features(tw_df, time_window) -> Tuple[float, float, float, float, f
     else:
         saccade_durations_mean = np.nanmean(saccade_durations)
         saccade_durations_max = np.nanmax(saccade_durations)
-
+    
     if saccade_count < 1:
         saccade_speed_mean = np.nan
         saccade_speed_max = np.nan
     else:
         saccade_speed_mean = np.nanmean(velocity[saccades])
         saccade_speed_max = np.nanmax(velocity[saccades])
-
+    
     return saccade_frequency, saccade_durations_mean, saccade_durations_max, saccade_speed_mean, saccade_speed_max
 
 
@@ -556,7 +596,7 @@ def _ipa(d):
     :param d: pupil diameter signal
     :return:
     '''
-
+    
     def modmax(d):
         # compute signal
         m = [0.0] * len(d)
@@ -575,7 +615,7 @@ def _ipa(d):
             else:
                 t[i] = 0.0
         return t
-
+    
     # obtain 2-level DWT of pupil diameter signal d
     try:
         (cA2, cD2, cD1) = pywt.wavedec(d[:, 1], 'sym16', 'per', level=2)
@@ -589,10 +629,10 @@ def _ipa(d):
     cA2[:] = [x / np.sqrt(4.0) for x in cA2]
     cD1[:] = [x / np.sqrt(2.0) for x in cD1]
     cD2[:] = [x / np.sqrt(4.0) for x in cD2]
-
+    
     # detect modulus maxima , see listing 2
     cD2m = modmax(cD2)
-
+    
     lambda_univ = np.std(cD2m) * np.sqrt(2.0 * np.log2(len(cD2m)))
     cD2t = pywt.threshold(cD2m, lambda_univ, mode="hard")
     # compute IPA
@@ -602,3 +642,52 @@ def _ipa(d):
             ctr += 1
         IPA = float(ctr) / tt
     return IPA
+
+
+def _saccade_calcs(speed, duration_seconds):
+    """
+    Calculate saccade rate and average fixation duration based on speed and duration.
+    :param speed: of the norm positions of pupil data
+    :param duration_seconds: duration of the time window in seconds
+    :return:
+    """
+    saccade_threshold = 0.02
+    dt = duration_seconds/ speed.shape[0]   # Assuming 60 Hz sampling rate, adjust if different
+    
+    # Label frames as saccade or fixation
+    is_saccade = speed > saccade_threshold
+    # Count number of saccades → transitions from fixation to saccade
+    
+    saccade_events = np.diff(is_saccade.astype(int)) == 1
+    n_saccades = np.sum(saccade_events)
+    
+    # Compute saccade rate (saccades per second)
+    saccade_rate = n_saccades / duration_seconds
+    
+    # Compute fixation durations
+    # First label fixations (frames where not saccading)
+    is_fixation = ~is_saccade
+    
+    # Find lengths of fixation periods
+    fixation_durations = []
+    current_fixation_length = 0
+    
+    for i in range(len(is_fixation)):
+        if is_fixation[i]:
+            current_fixation_length += 1
+        else:
+            if current_fixation_length > 0:
+                fixation_durations.append(current_fixation_length * dt)
+                current_fixation_length = 0
+    
+    # Handle case where last frames are a fixation
+    if current_fixation_length > 0:
+        fixation_durations.append(current_fixation_length * dt)
+    
+    # Compute average fixation duration
+    if len(fixation_durations) > 0:
+        avg_fixation_duration = np.mean(fixation_durations)
+    else:
+        avg_fixation_duration = 0.0
+    
+    return saccade_rate, avg_fixation_duration
