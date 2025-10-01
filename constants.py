@@ -53,7 +53,7 @@ ALL_EDA_FEATURES = ["SCR_Peaks_N",
                     "EDA_SympatheticN",
                     "EDA_Autocorrelation"]
 ALL_TMP_FEATURES = ["mean_tmp_dif", "mean_th", "mean_t1", "gradient", "psd_power"]
-
+ALL_TMP_FEATURES_WRIST = ["mean_tmp", "mean_tmp_dif", "std_tmp_dif", "gradient", "psd_power"]
 ALL_ECG_FEATURES_NEUROKIT = ['ECG_Rate_Mean', 'HRV_MeanNN', 'HRV_SDNN', 'HRV_SDANN1', 'HRV_SDNNI1',
        'HRV_SDANN2', 'HRV_SDNNI2', 'HRV_SDANN5', 'HRV_SDNNI5', 'HRV_RMSSD',
        'HRV_SDSD', 'HRV_CVNN', 'HRV_CVSD', 'HRV_MedianNN', 'HRV_MadNN',

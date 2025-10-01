@@ -1,3 +1,5 @@
+# NOTE Legacy code
+
 import platform
 import os
 import pandas as pd

@@ -58,6 +58,7 @@ def transform_eda(raw_data: pd.DataFrame) -> pd.DataFrame:
     for k in raw_data.keys():
         if "time" in k.lower():
             raw_data = raw_data.rename(columns={k: "LocalTimestamp"})
+            raw_data["LocalTimestamp"] = raw_data["LocalTimestamp"] - raw_data["LocalTimestamp"].iloc[0]
         elif "ea" in k.lower():
             raw_data = raw_data.rename(columns={k: "EDA"})
 

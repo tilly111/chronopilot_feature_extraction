@@ -1,3 +1,5 @@
+# NOTE Legacy code
+
 import pandas as pd
 import constants
 

@@ -5,6 +5,8 @@ import heartpy as hp
 import neurokit2 as nk
 from scipy.signal import resample
 
+import constants
+
 
 def calculate_ppg_features(ppg_data: pd.DataFrame, target_f=100, verbose=False):
     """ Calculates ppg_nk features using the heartPy library.
@@ -92,9 +94,26 @@ def calculate_ppg_features_nk(ppg_data: pd.DataFrame, target_f=100, verbose=Fals
         print(f"The original frequency is {og_f}")
         print(f"The new frequency is {f}")
         print(f"Length of the resampled signal {signal_resampled.shape}")
-
-    p_1_process, info = nk.ppg_process(signal_resampled, sampling_rate=f)  # , report=f"ppg_report_{int(target_f)}.html" -> somewhat broken
-    p_1_features = nk.ppg_analyze(p_1_process, sampling_rate=f, method="interval-related")
+    
+    try:
+        p_1_process, info = nk.ppg_process(signal_resampled, sampling_rate=f)  # , report=f"ppg_report_{int(target_f)}.html" -> somewhat broken
+        p_1_features = nk.ppg_analyze(p_1_process, sampling_rate=f, method="interval-related")
+    except:
+        print("Probably not enough peaks found... try upsampe frequency")
+        target_f = 200
+        
+        og_f = ppg_data["PG"].to_numpy().shape[0] / (
+            ppg_data["LocalTimestamp"].iloc[-1] - ppg_data["LocalTimestamp"].iloc[0])
+        signal_resampled = resample(ppg_data["PG"].to_numpy(),
+                                    int(np.ceil((ppg_data["PG"].to_numpy()).shape[0] * target_f / og_f)))
+        f = signal_resampled.shape[0] / (ppg_data["LocalTimestamp"].iloc[-1] - ppg_data["LocalTimestamp"].iloc[0])
+        try:
+            p_1_process, info = nk.ppg_process(signal_resampled,
+                                               sampling_rate=f)  # , report=f"ppg_report_{int(target_f)}.html" -> somewhat broken
+            p_1_features = nk.ppg_analyze(p_1_process, sampling_rate=f, method="interval-related")
+        except:
+            print("Upsampling didnt work either... returning zeros")
+            p_1_features = pd.DataFrame(np.zeros((1, 38)), columns=constants.ALL_PPG_FEATURES_NEUROKIT)
 
     if verbose:
         nk.ppg_plot(p_1_process, info)
@@ -129,6 +148,7 @@ def transform_ppg(raw_data: pd.DataFrame) -> pd.DataFrame:
     for k in raw_data.keys():
         if "time" in k.lower():
             raw_data = raw_data.rename(columns={k: "LocalTimestamp"})
+            raw_data["LocalTimestamp"] = raw_data["LocalTimestamp"] - raw_data["LocalTimestamp"].iloc[0]
         elif "pg" in k.lower():
             raw_data = raw_data.rename(columns={k: "PG"})
 
