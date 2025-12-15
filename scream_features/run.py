@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import numpy as np
 import pandas as pd
 
@@ -78,7 +79,7 @@ def ppg_scream(dir_path, study, baseline_subtraction, target) -> [pd.DataFrame, 
     for i, subject in enumerate(subjects):
         for j, block in enumerate(["exp_T", "exp_MA", "exp_TU", "exp_PU", "exp_S"]):
             print(f"Running subject {subject}, block {block} ---------------------------")
-            d = x[i][j+1] # +1 to skip baseline
+            d = x[i][j+2] # +2 to skip baseline and practice
             
             # format data
             interval = transform_ppg(d)
@@ -101,7 +102,7 @@ def ppg_scream(dir_path, study, baseline_subtraction, target) -> [pd.DataFrame, 
             
             # compute label
             result_frame_label.loc[len(result_frame_label)] = {"Participant": subject, "Block": block, "Slice": "all",
-                                                               f"{target}": labels[i][j+1]}  # NOTE we already have the label
+                                                               f"{target}": labels[i][j+2]}  # NOTE we already have the label
     
     return result_frame, result_frame_label
 
@@ -123,7 +124,7 @@ def eda_scream(dir_path, study, baseline_subtraction, target) -> [pd.DataFrame, 
     for i, subject in enumerate(subjects):
         for j, block in enumerate(["exp_T", "exp_MA", "exp_TU", "exp_PU", "exp_S"]):
             print(f"Running subject {subject}, block {block} ---------------------------")
-            d = x[i][j + 1]  # +1 to skip baseline
+            d = x[i][j + 2]  # +2 to skip baseline and practice
             
             # format data
             interval = transform_eda(d)
@@ -147,7 +148,7 @@ def eda_scream(dir_path, study, baseline_subtraction, target) -> [pd.DataFrame, 
             # compute label
             result_frame_label.loc[len(result_frame_label)] = {"Participant": subject, "Block": block, "Slice": "all",
                                                                f"{target}": labels[i][
-                                                                   j + 1]}  # NOTE we already have the label
+                                                                   j + 2]}  # NOTE we already have the label
     
     return result_frame, result_frame_label
 
@@ -169,8 +170,8 @@ def tmp_scream(dir_path, study, baseline_subtraction, target) -> [pd.DataFrame, 
     
     for i, subject in enumerate(subjects):
         for j, block in enumerate(["exp_T", "exp_MA", "exp_TU", "exp_PU", "exp_S"]):
-            d_t1 = x_t1[i][j+1] # +1 to skip baseline
-            d_th = x_th[i][j+1]
+            d_t1 = x_t1[i][j+2] # +2 to skip baseline and practice
+            d_th = x_th[i][j+2]
 
             # format data
             interval = transform_thermo_pile(d_t1, d_th)
@@ -195,7 +196,7 @@ def tmp_scream(dir_path, study, baseline_subtraction, target) -> [pd.DataFrame, 
             result_frame_label.loc[len(result_frame_label)] = {"Participant": subject, "Block": block,
                                                                "Slice": "all",
                                                                f"{target}": labels[i][
-                                                                   j + 1]}  # NOTE we already have the label
+                                                                   j + 2]}  # NOTE we already have the label
     return result_frame, result_frame_label
 
 def run(config):
@@ -237,17 +238,15 @@ def run(config):
         # save to csv
         if baseline_subtraction_s:
             # check if directory exists
-            save_path = os.path.join(dir_path_s, f"features/features_baseline_subtraction")
-            if not os.path.exists(save_path):
-                os.makedirs(save_path)
-            df.to_csv(os.path.join(save_path, f"X_{target}_{n_classes}classes.csv"), index=False)
-            df_label.to_csv(os.path.join(save_path, f"y_{target}_{n_classes}classes.csv"), index=False)
+            save_path = Path(os.path.join(dir_path_s, "preprocessed_data/baseline_subtraction"))
+            save_path.mkdir(parents=True, exist_ok=True)
+            df.to_csv(os.path.join(save_path, f"X_{target}_{n_classes}_classes.csv"), index=False)
+            df_label.to_csv(os.path.join(save_path, f"y_{target}_{n_classes}_classes.csv"), index=False)
         else:
             # check if directory exists
-            save_path = os.path.join(dir_path_s, f"features/features_no_baseline_subtraction")
-            if not os.path.exists(save_path):
-                os.makedirs(save_path)
-            df.to_csv(os.path.join(save_path, f"X_{target}_{n_classes}classes.csv"), index=False)
-            df_label.to_csv(os.path.join(save_path, f"y_{target}_{n_classes}classes.csv"), index=False)
+            save_path = Path(os.path.join(dir_path_s, f"preprocessed_data/no_baseline_subtraction"))
+            save_path.mkdir(parents=True, exist_ok=True)
+            df.to_csv(os.path.join(save_path, f"X_{target}_{n_classes}_classes.csv"), index=False)
+            df_label.to_csv(os.path.join(save_path, f"y_{target}_{n_classes}_classes.csv"), index=False)
     
         

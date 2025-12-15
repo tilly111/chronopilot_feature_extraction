@@ -1,5 +1,5 @@
 import os
-import numpy as np
+from pathlib import Path
 import pandas as pd
 
 import constants
@@ -221,8 +221,10 @@ def run(config):
         print("We have no baseline data for this study...")
     else:
         # check if directory exists
-        save_path = os.path.join(dir_path, f"features/features_no_baseline_subtraction")
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
-        df.to_csv(os.path.join(save_path, f"X_{target}_{n_classes}classes.csv"), index=False)
-        df_label.to_csv(os.path.join(save_path, f"y_{target}_{n_classes}classes.csv"), index=False)
+        save_path = Path(os.path.join(dir_path, "preprocessed_data/no_baseline_subtraction"))
+        save_path.mkdir(parents=True, exist_ok=True)
+        # save_path = os.path.join(dir_path, f"features/features_no_baseline_subtraction")
+        # if not os.path.exists(save_path):
+        #     os.makedirs(save_path)
+        df.to_csv(os.path.join(save_path, f"X_{target}_{n_classes}_classes.csv"), index=False)
+        df_label.to_csv(os.path.join(save_path, f"y_{target}_{n_classes}_classes.csv"), index=False)
